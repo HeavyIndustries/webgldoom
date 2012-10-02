@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>WebGL Doom</title>
+		<link id="favicon" rel="shortcut icon" type="image/png" href="../he3d/favicon.png">
+		<style>
+			body {
+				background: #212121 url('images/background.gif') repeat left top;
+			}
+			div.info {
+				background: #212121 url('images/background2.gif') repeat left top;
+				border-radius: 25px;
+				color: #ccc;
+				margin:auto;
+				padding: 15px;
+				padding-top: 0px;
+				opacity: 0.8;
+				text-align: left;
+				width: 800px;
+			}
+			div.text {
+				background: #000000;
+				border-radius: 15px;
+				color: #ccc;
+				margin:auto;
+				padding: 15px;
+				opacity: 0.9;
+				text-align: justify;
+				width: 770px;
+			}
+			div.text p a, div.text ul li a {
+				color: #ff0000;
+			}
+
+			h1, h2, h3 {
+				color: #FF0000;
+				font-size: 16pt;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="info">
+			<div style="text-align: center;">
+				<img src="images/logo.png" alt="WebGL Doom" title="WebGL Doom">
+			</div>
+			<div class="text">
+				<h1>WebGL Doom</h1>
+				<p>...but not really, well at least not at the moment anyway. What we have here is
+					a WebGL renderer for displaying Doom Levels loaded directly from the Shareware
+					Wad file. This demo uses a <a href="http://glbsp.sourceforge.net/" target="_blank">GLBSP</a>
+					modified version of the original wad file can be downloaded from
+					<a href="ftp://ftp.idsoftware.com/idstuff/doom/" target="_blank">the official
+					id software ftp</a> to make it more WebGL/OpenGL friendly.</p>
+				<p>While Doom may not look very complicated by todays standards there are quite a
+					few issues trying to render its data in an accellerated 3D enviroment, so there
+					is plently of little hacks and bodges along the way. Which you can try and
+					decipher from the spaghetti code at
+					<a href="https://github.com/HeavyIndustries/webgldoom" target="_blank">
+					https://github.com/HeavyIndustries/webgldoom</a>. At some point we plan to
+					do a technical write up on how we got to this stage.</p>
+				<p>This demo uses excellent <a href="https://github.com/vjeux/jDataView"
+					target="_blank">jDataView.js</a> binary file reader we can pull out all the map
+					and texture	information from the wad file then construct the data into a
+					WebGL buffer. The rendering framework behind this demo is using our custom
+					built WebGL	engine <a href="https://github.com/HeavyIndustries/he3d"
+					target="_blank">he3d</a> which we'll not go into, its not important to this
+					demo, it just hides a lot of the html5/webgl/javascript gumpf away.</p>
+					
+				<h2>The Demo</h2>
+				<p>Yeah yeah yeah, enough with the technical nonsense, click on one of the links
+					below to have a play around with it. Bare in mind that most of the maps don't
+					render correctly and some may even cause errors and stop it from running but
+					its still pretty fun to fly around</p>
+				<ul>
+					<li><a href="doom.html#e1m1">E1M1 - Hanger</a>
+					<li><a href="doom.html#e1m2">E1M2 - Nuclear Plant</a>
+					<li><a href="doom.html#e1m3">E1M3 - Toxin Refinery</a>
+					<li><a href="doom.html#e1m4">E1M4 - Command Control</a>
+					<li><a href="doom.html#e1m5">E1M5 - Phobos Lab</a>
+					<li><a href="doom.html#e1m6">E1M6 - Central Processing</a>
+					<li><a href="doom.html#e1m7">E1M7 - Computer Station</a>
+					<li><a href="doom.html#e1m8">E1M8 - Phobos Anomaly</a>
+					<li><a href="doom.html#e1m9">E1M9 - Military Base (Secret Level)</a>
+				</ul>
+
+				<h2>Controls</h2>
+				<p>If you have a recent version of <a href="www.google.com/chrome" target="_blank">
+					Chrome</a> you should have access to the <a target="_blank"
+					href="http://www.chromium.org/developers/design-documents/mouse-lock">Pointer
+					Lock API</a>, click on the main view port and you should get a small popup at
+					the top of the screen asking you to allow mouse lock. This is a good thing...<br>
+					If you don't have a fancy new version of Chrome, you can use the cursor keys to
+					move your view around.</p>
+				<p>Other than that its your basic WASD style control scheme, you can use the Q and E
+					keys to float up and down. Yeah yeah, Doom didn't have up and down, it didn't
+					even have looking up and down but for the sake of this demo and to save my sanity
+					while developing this, you can.</p>
+				<p>There are a few other buttons you can fiddle with too, if your GPU is halfway
+					decent you can try maximising the viewport using ALT+RETURN, then if you are
+					feeling really fruity, hit F11 for full screen browser mode.</p>
+				<p>You can also toggle some of the rendering settings using 1,2,3,4,5. It should be
+					fairly obvious what they do when you press them, the 'Things' are the positions
+					where monsters/barrels/2d objects would be (not quite got them working yet).</p>
+
+				<h2>Disclaimer</h2>
+				<p>We can't be held responsible for the quality of the code in this demo, we wrote
+					it ourselves and that should be enough of a warning for you. Sorry if it burns
+					down your cat or kicks your house, we didn't intend it to but these things just
+					tend to happen.</p>
+				<p>With this being Doom and all, we are also not responsible if you go on a mass
+					killing spree apparently that happens when you play video games.</p>
+
+				<h2>Other Resources</h2>
+				<p><a href="https://github.com/id-Software/DOOM" target="_blank">The Original
+					DOOM Source Code</a><br>
+					<a href="http://doomwiki.org/" target="_blank">Doom Wiki.org</a><br>
+					<a href="http://fabiensanglard.net/doomIphone/doomClassicRenderer.php"
+					target="_blank">Doom Code Review</a></p>
+				<p><small>Doom, Doom2 and Doom3 are trademarks of id Software.
+					All game logos, graphics, textures and assets are copyright their respective
+					owners. Please don't sue us, we	just like your games/tech and want to mess
+					around with them.</small></p>
+			</div>
+		</div>
+		<script src="http://cdn.webglstats.com/stat.js" defer="defer" async="async"></script>
+	</body>
+</html>
