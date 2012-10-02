@@ -12,6 +12,7 @@ he3d.game={
 		blink:	0,
 		halfblink:0
 	},
+	loadingmsg: false,
 	map:{
 		curmap:	'E1M1',
 		debug: 	false,
@@ -23,7 +24,7 @@ he3d.game={
 		vbo:	{}
 	},
 	name:		"WebGL Doom",
-	path:		"../doom/",
+	path:		"../webgldoom/",
 	sky:		{show:true,vbo:{},tex:-1},
 	splash:		{show:true,vbo:{},tex:-1,loaded:false},
 	things:		{show:false,vbo:{},tex:-1},
@@ -146,6 +147,12 @@ he3d.game.loadAssets=function(){
 he3d.game.waitAssets=function(){
 	if(!he3d.s.checkQueue())
 		return;
+
+	// Give a quick notice for slow downloading
+	if(!he3d.game.loadingmsg){
+		he3d.game.loadingmsg=true;
+		he3d.log("NOTICE","Loading WAD File, Please Wait....");
+	}		
 
 	// Show Title Screen if the texture has come back early
 	if(!he3d.game.splash.loaded&&he3d.game.map.titlescreen.data){
