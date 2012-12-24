@@ -25,9 +25,13 @@ he3d.game={
 	},
 	name:		"WebGL Doom",
 	path:		"../webgldoom/",
-	sky:		{show:true,vbo:{},tex:-1},
-	splash:		{show:true,vbo:{},tex:-1,loaded:false},
-	things:		{show:false,vbo:{},tex:-1},
+	sky:		{show:true,vbo:{}},
+	splash:		{show:true,vbo:{},loaded:false},
+	things:		{
+		actors:	[],
+		show:	true,
+		vbo:	{}
+	},
 	showlines:	false,
 	walls:{
 		show:	true,
@@ -84,7 +88,9 @@ he3d.game.map.progress=function(e){
 	this.map.sky=e.data.sky;
 	this.map.spawnPos=e.data.spawnPos;
 	this.map.spawnDir=e.data.spawnDir;
+	this.map.states=e.data.states;
 	this.map.things=e.data.things;
+	this.map.thingsatlus=e.data.thingsatlus;
 	this.map.worldbb=e.data.worldbb;
 	this.map.loaded=true;
 };
@@ -210,6 +216,16 @@ he3d.game.waitAssets=function(){
 		height:	he3d.game.map.flatlus.height,
 		width:	he3d.game.map.flatlus.width
 	});
+	he3d.game.things.vbo.texture=he3d.t.load({
+		name: 	'thingsatlus',
+		type:	'raw',
+		format:	'rgba',
+		flip:	false,
+		filter:	{min:he3d.gl.NEAREST,mag:he3d.gl.NEAREST},
+		image:	he3d.game.map.thingsatlus.data,
+		height:	he3d.game.map.thingsatlus.height,
+		width:	he3d.game.map.thingsatlus.width
+	});
 
 	he3d.game.sky.vbo=he3d.primatives.bbox({
 		insideout:true,
@@ -220,6 +236,7 @@ he3d.game.waitAssets=function(){
 	// Skybox cam position
 	he3d.game.sky.campos=[-he3d.game.map.sky.width/2,
 		-he3d.game.map.sky.width/2,-he3d.game.map.sky.width/2];
+	he3d.game.sky.mvMatrix=he3d.m.mat4.create();
 
 	// Set draw distance
 	if((he3d.game.map.worldbb[1]-he3d.game.map.worldbb[0])<
@@ -263,8 +280,10 @@ he3d.game.waitAssets=function(){
 
 	// Things Buffers
 	he3d.game.things.count=0;
-	he3d.game.things.vbo.buf_data=he3d.gl.createBuffer();
-	he3d.game.things.vbo.data=new Float32Array(3*he3d.game.map.things.length);
+	he3d.game.things.mvMatrix=he3d.m.mat4.create();
+	he3d.game.things.rotMat=he3d.m.mat4.create();
+	he3d.game.things.up=he3d.m.vec3.create([0,1,0]);
+	he3d.game.things.buildActors();
 
 	he3d.console.toggle(false);
 	he3d.mode=he3d.game.loaded;
@@ -404,12 +423,8 @@ he3d.game.flats.draw=function(){
 	he3d.gl.uniform4fv(he3d.r.curProgram.uniforms['lighttimers'],he3d.game.lights.timers);
 
 	// Position in World
-	he3d.r.mvPushMatrix();
-		he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uPMatrix'],
-			false,he3d.r.pMatrix);
-		he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uMVMatrix'],
-			false,he3d.r.mvMatrix);
-	he3d.r.mvPopMatrix();
+	he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uPMatrix'],false,he3d.r.pMatrix);
+	he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uMVMatrix'],false,he3d.r.mvMatrix);
 
 	he3d.gl.bindBuffer(he3d.gl.ELEMENT_ARRAY_BUFFER,he3d.game.flats.vbo.buf_indices);
 	
@@ -454,12 +469,8 @@ he3d.game.walls.draw=function(){
 	he3d.gl.uniform4fv(he3d.r.curProgram.uniforms['lighttimers'],he3d.game.lights.timers);
 	
 	// Position in World
-	he3d.r.mvPushMatrix();
-		he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uPMatrix'],
-			false,he3d.r.pMatrix);
-		he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uMVMatrix'],
-			false,he3d.r.mvMatrix);
-	he3d.r.mvPopMatrix();
+	he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uPMatrix'],false,he3d.r.pMatrix);
+	he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uMVMatrix'],false,he3d.r.mvMatrix);
 
 	he3d.gl.bindBuffer(he3d.gl.ELEMENT_ARRAY_BUFFER,he3d.game.walls.vbo.buf_indices);
 	
@@ -497,14 +508,12 @@ he3d.game.sky.draw=function(){
 	he3d.gl.uniform1i(he3d.r.curProgram.uniforms['texture'],he3d.game.sky.tex);
 
 	// Inverse camera rotation
-	he3d.r.mvPushMatrix();
-		he3d.m.mat4.identity(he3d.r.mvMatrix);
-		he3d.m.mat4.rotateX(he3d.r.mvMatrix,he3d.m.degtorad(-he3d.game.camera.angle[0]));
-		he3d.m.mat4.rotateY(he3d.r.mvMatrix,he3d.m.degtorad(-he3d.game.camera.angle[1]));
-		he3d.m.mat4.translate(he3d.r.mvMatrix,he3d.game.sky.campos);
-		he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uPMatrix'],false,he3d.r.pMatrix);
-		he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uMVMatrix'],false,he3d.r.mvMatrix);
-	he3d.r.mvPopMatrix();
+	he3d.m.mat4.identity(he3d.game.sky.mvMatrix);
+	he3d.m.mat4.rotateX(he3d.game.sky.mvMatrix,he3d.m.degtorad(-he3d.game.camera.angle[0]));
+	he3d.m.mat4.rotateY(he3d.game.sky.mvMatrix,he3d.m.degtorad(-he3d.game.camera.angle[1]));
+	he3d.m.mat4.translate(he3d.game.sky.mvMatrix,he3d.game.sky.campos);
+	he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uPMatrix'],false,he3d.r.pMatrix);
+	he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uMVMatrix'],false,he3d.game.sky.mvMatrix);
 	
 	he3d.gl.bindBuffer(he3d.gl.ELEMENT_ARRAY_BUFFER,he3d.game.sky.vbo.buf_indices);
 	he3d.gl.drawElements(he3d.gl.TRIANGLES,he3d.game.sky.vbo.indices,he3d.gl.UNSIGNED_SHORT,0);
@@ -539,34 +548,98 @@ he3d.game.splash.draw=function(){
 //
 // Things ------------------------------------------------------------------------------------------
 //
+he3d.game.things.buildActors=function(){
+	var aname,verts,texcoords,data,vbo,w,h;
+	var indices=new Uint16Array([0,1,2,0,2,3]);
+	for(var s in he3d.game.map.states){
+		if(!he3d.game.map.states)
+			continue;
+		aname='a_'+he3d.game.map.states[s].height+"_"+he3d.game.map.states[s].width;
+		if(!he3d.game.things.actors[aname]){
+			he3d.game.things.actors[aname]={};
+			h=he3d.game.map.states[s].height/2;
+			w=he3d.game.map.states[s].width/2;
+			verts=new Float32Array([
+				-w, -h, 0,
+				-w,  h, 0,
+				 w,  h, 0,
+				 w, -h, 0
+			]);
+			texcoords=new Float32Array([
+				he3d.game.map.states[s].uv[1],he3d.game.map.states[s].uv[2],
+				he3d.game.map.states[s].uv[1],he3d.game.map.states[s].uv[0],
+				he3d.game.map.states[s].uv[3],he3d.game.map.states[s].uv[0],
+				he3d.game.map.states[s].uv[3],he3d.game.map.states[s].uv[2]
+			]);
+			
+			data=he3d.tools.interleaveFloat32Arrays([3,2],[verts,texcoords]);
+			he3d.game.things.actors[aname].buf_data=he3d.gl.createBuffer();
+			he3d.gl.bindBuffer(he3d.gl.ARRAY_BUFFER,he3d.game.things.actors[aname].buf_data);
+			he3d.gl.bufferData(he3d.gl.ARRAY_BUFFER,data,he3d.gl.STATIC_DRAW);
+
+			he3d.game.things.actors[aname].buf_indices=he3d.gl.createBuffer();
+			he3d.game.things.actors[aname].indices=indices.length;
+			he3d.gl.bindBuffer(he3d.gl.ELEMENT_ARRAY_BUFFER,
+				he3d.game.things.actors[aname].buf_indices);
+			he3d.gl.bufferData(he3d.gl.ELEMENT_ARRAY_BUFFER,indices,he3d.gl.STATIC_DRAW);
+		}
+	}
+};
+
 he3d.game.things.draw=function(){
 	if(!he3d.game.things.show)
 		return;
 	he3d.r.changeProgram('things');
+	he3d.gl.uniform1i(he3d.r.curProgram.uniforms['texture'],he3d.game.things.vbo.texture);
 
-	he3d.gl.bindBuffer(he3d.gl.ARRAY_BUFFER,he3d.game.things.vbo.buf_data);
-	he3d.gl.bufferData(he3d.gl.ARRAY_BUFFER,he3d.game.things.vbo.data,he3d.gl.DYNAMIC_DRAW);
+	he3d.gl.disable(he3d.gl.CULL_FACE);
+	he3d.gl.enable(he3d.gl.BLEND);
 
-	he3d.gl.enableVertexAttribArray(he3d.r.curProgram.attributes['aPosition']);
-	he3d.gl.vertexAttribPointer(he3d.r.curProgram.attributes['aPosition'],
-		3,he3d.gl.FLOAT,false,12,0);
-		
-	// Position in World
-	he3d.r.mvPushMatrix();
+	var aname;
+	he3d.game.things.count=0;
+	for(var t=0;t<he3d.game.map.things.length;t++){
+		if(!he3d.game.map.things[t].type||
+			!he3d.game.map.states[he3d.game.map.things[t].type])
+			continue;
+
+		aname='a_'+he3d.game.map.states[he3d.game.map.things[t].type].height+"_"+
+			he3d.game.map.states[he3d.game.map.things[t].type].width;
+
+		he3d.gl.bindBuffer(he3d.gl.ARRAY_BUFFER,he3d.game.things.actors[aname].buf_data);
+	
+		he3d.gl.enableVertexAttribArray(he3d.r.curProgram.attributes['aPosition']);
+		he3d.gl.vertexAttribPointer(he3d.r.curProgram.attributes['aPosition'],
+			3,he3d.gl.FLOAT,false,20,0);
+	
+		he3d.gl.enableVertexAttribArray(he3d.r.curProgram.attributes['aTexCoord']);
+		he3d.gl.vertexAttribPointer(he3d.r.curProgram.attributes['aTexCoord'],
+			2,he3d.gl.FLOAT,false,20,12);
+
+		he3d.m.mat4.set(he3d.r.mvMatrix,he3d.game.things.mvMatrix);
+		he3d.m.mat4.translate(he3d.game.things.mvMatrix,[
+			he3d.game.map.things[t].x,
+			he3d.game.map.things[t].y+(he3d.game.map.states[he3d.game.map.things[t].type].height/2),
+			he3d.game.map.things[t].z
+		]);
+
 		he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uPMatrix'],false,he3d.r.pMatrix);
-		he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uMVMatrix'],false,he3d.r.mvMatrix);
-	he3d.r.mvPopMatrix();
+		he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uMVMatrix'],
+			false,he3d.game.things.mvMatrix);
+		
+		he3d.gl.bindBuffer(he3d.gl.ELEMENT_ARRAY_BUFFER,
+			he3d.game.things.actors[aname].buf_indices);
+		he3d.gl.drawElements(he3d.gl.TRIANGLES,
+			he3d.game.things.actors[aname].indices,he3d.gl.UNSIGNED_SHORT,0);
 
-	he3d.gl.drawArrays(he3d.gl.POINTS,0,he3d.game.things.count/3);
+		he3d.game.things.count++;
+	}
+
+	he3d.gl.disable(he3d.gl.BLEND);
+	he3d.gl.enable(he3d.gl.CULL_FACE);
 };
 
 he3d.game.things.update=function(){
-	he3d.game.things.count=0;
-	for(var t=0;t<he3d.game.map.things.length;t++){
-		he3d.game.things.vbo.data[he3d.game.things.count++]=he3d.game.map.things[t].x;
-		he3d.game.things.vbo.data[he3d.game.things.count++]=he3d.game.map.things[t].y;
-		he3d.game.things.vbo.data[he3d.game.things.count++]=he3d.game.map.things[t].z;
-	}
+	return;
 };
 
 //

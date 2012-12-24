@@ -1,9 +1,13 @@
 attribute vec3 aPosition;
+attribute vec2 aTexCoord;
 
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 
+varying vec2 vTexCoord;
+
 void main(void){
-	gl_Position=uPMatrix*uMVMatrix*vec4(aPosition, 1.0);
-	gl_PointSize=25.0;
+	vTexCoord=aTexCoord;
+	// Mmm billboardy, spherical though =( 
+	gl_Position=uPMatrix*(uMVMatrix*vec4(0.0,0.0, 0.0, 1.0)+vec4(aPosition.x,aPosition.y,0.0,0.0));
 }

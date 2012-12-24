@@ -8,6 +8,7 @@ importScripts('../../he3d/scripts/lib/jdataview.js');
 
 importScripts('wadLoader_level.js');
 importScripts('wadLoader_textures.js');
+importScripts('wadLoader_things.js');
 importScripts('defines.js');
 
 he3d.log=function(){
@@ -77,143 +78,148 @@ wadLoader.getFile=function(e){
 //
 // Wad File ----------------------------------------------------------------------------------------
 //
-wadLoader.getHeader=function(wad,view){
-	view.seek(0);
-	wad.header={
-		id:				view.getString(4),
-		numlumps:		view.getUint32(),
-		infotableofs:	view.getUint32()
+wadLoader.getHeader=function(){
+	this.view.seek(0);
+	this.wad.header={
+		id:				this.view.getString(4),
+		numlumps:		this.view.getUint32(),
+		infotableofs:	this.view.getUint32()
 	};
 	if(wadLoader.debug)
-		he3d.log("NOTICE","Got Header: "+JSON.stringify(wad.header));
-	if(wad.header.id!='IWAD')
-		throw "Unsupported WAD format: "+wad.header.id;
+		he3d.log("NOTICE","Got Header: "+JSON.stringify(this.wad.header));
+	if(this.wad.header.id!='IWAD')
+		throw "Unsupported WAD format: "+this.wad.header.id;
 };
-wadLoader.getDirectory=function(wad,view){
-	view.seek(wad.header.infotableofs);
-	wad.directory=[];
+wadLoader.getDirectory=function(){
+	this.view.seek(this.wad.header.infotableofs);
+	this.wad.directory=[];
 	var l;
-	for(l=0;l<wad.header.numlumps;l++){
-		wad.directory.push({
-			filepos:view.getUint32(),
-			size:	view.getUint32(),
-			name:	view.getString(8).replace(/\u0000/g,'').toUpperCase(),
+	for(l=0;l<this.wad.header.numlumps;l++){
+		this.wad.directory.push({
+			filepos:this.view.getUint32(),
+			size:	this.view.getUint32(),
+			name:	this.view.getString(8).replace(/\u0000/g,'').toUpperCase(),
 			data:	[]
 		});
 	}
 	
 	if(wadLoader.debug)
-		he3d.log("NOTICE","Got Directory: "+wad.directory.length+" Entries");
-	if(wad.directory[wad.directory.length-1].name!="F_END")
+		he3d.log("NOTICE","Got Directory: "+this.wad.directory.length+" Entries");
+	if(this.wad.directory[this.wad.directory.length-1].name!="F_END")
 		throw "Unexpected end of Directory Marker: "+
-			JSON.stringify(wad.directory[wad.directory.length-1]);
+			JSON.stringify(this.wad.directory[this.wad.directory.length-1]);
 };
-wadLoader.getLevels=function(wad,view){
+wadLoader.getLevels=function(){
 	var l,curl;
-	wad.levels=[];
-	for(l=0;l<wad.directory.length;l++){
-		if(wad.directory[l].name.match(/^(e\dm\d)/i)){
+	this.wad.levels=[];
+	for(l=0;l<this.wad.directory.length;l++){
+		if(this.wad.directory[l].name.match(/^(e\dm\d)/i)){
 			if(wadLoader.debug)
-				he3d.log("NOTICE","Found Level at Lump["+l+"]: "+wad.directory[l].name);
-			curl=wad.directory[l].name;
-			wad.levels[curl]={name:curl,lump:l};
+				he3d.log("NOTICE","Found Level at Lump["+l+"]: "+this.wad.directory[l].name);
+			curl=this.wad.directory[l].name;
+			this.wad.levels[curl]={name:curl,lump:l};
 			continue;
 		}
 		if(!curl)
 			continue;
 
-		switch(wad.directory[l].name){
-			case 'THINGS':	this.getThings(wad,view,curl,l);break;
-			case 'LINEDEFS':this.getLinedefs(wad,view,curl,l);break;
-			case 'SIDEDEFS':this.getSidedefs(wad,view,curl,l);break;
-			case 'VERTEXES':this.getVertexes(wad,view,curl,l);break;
-			case 'SEGS':	this.getSegs(wad,view,curl,l);break;
-			case 'SSECTORS':this.getSsectors(wad,view,curl,l);break;
-			case 'NODES':	this.getNodes(wad,view,curl,l);break;
-			case 'SECTORS':	this.getSectors(wad,view,curl,l);break;
-			case 'REJECT':	this.getReject(wad,view,curl,l);break;
-			case 'BLOCKMAP':this.getBlockmap(wad,view,curl,l);break;
-			case 'GL_VERT':	this.getGLVerts(wad,view,curl,l);break;
-			case 'GL_SEGS':	this.getGLSegs(wad,view,curl,l);break;
-			case 'GL_SSECT':this.getGLSSect(wad,view,curl,l);break;
-			case 'GL_NODES':this.getGLNodes(wad,view,curl,l);break;
-			case 'GL_PVS':	this.getGLPVS(wad,view,curl,l);break;
+		switch(this.wad.directory[l].name){
+			case 'THINGS':	this.getThings(curl,l);break;
+			case 'LINEDEFS':this.getLinedefs(curl,l);break;
+			case 'SIDEDEFS':this.getSidedefs(curl,l);break;
+			case 'VERTEXES':this.getVertexes(curl,l);break;
+			case 'SEGS':	this.getSegs(curl,l);break;
+			case 'SSECTORS':this.getSsectors(curl,l);break;
+			case 'NODES':	this.getNodes(curl,l);break;
+			case 'SECTORS':	this.getSectors(curl,l);break;
+			case 'REJECT':	this.getReject(curl,l);break;
+			case 'BLOCKMAP':this.getBlockmap(curl,l);break;
+			case 'GL_VERT':	this.getGLVerts(curl,l);break;
+			case 'GL_SEGS':	this.getGLSegs(curl,l);break;
+			case 'GL_SSECT':this.getGLSSect(curl,l);break;
+			case 'GL_NODES':this.getGLNodes(curl,l);break;
+			case 'GL_PVS':	this.getGLPVS(curl,l);break;
 		}
 	}
 };
-wadLoader.getLumpOfs=function(wad,lump){
-	for(var l=0;l<wad.directory.length;l++)
-		if(wad.directory[l].name==lump)
-			return wad.directory[l].filepos;
+wadLoader.getLumpOfs=function(lump){
+	for(var l=0;l<this.wad.directory.length;l++)
+		if(this.wad.directory[l].name==lump)
+			return this.wad.directory[l].filepos;
 	return -1;
 };
 wadLoader.parse=function(filename,level,data){
-	var view=new jDataView(data);
-	var wad={};
-	this.getHeader(wad,view);
-	this.getDirectory(wad,view);
-	this.getColorMaps(wad,view);
+	this.view=new jDataView(data);
+	this.wad={};
+	this.getHeader();
+	this.getDirectory();
+	this.getColorMaps();
 	
 	// Grab and return the Title Screen straight away
-	postMessage({titlescreen:this.getTitleScreen(wad,view)});
+	postMessage({titlescreen:this.getPatch('TITLEPIC')});
 
-	this.getLevels(wad,view);
-	this.getPatches(wad,view);
-	this.getWallTextures(wad,view);
-	this.getFlatTextures(wad,view);
+	this.getLevels();
+	this.getPatches();
+	this.getWallTextures();
+	this.getFlatTextures();
 
-	this.buildLevel(wad,level);
+	this.buildLevel(level);
+	this.buildThings(level);
 
-	he3d.log("NOTICE",'Finished Parsing '+filename,'Transfering Data back from Worker Thread');
+	he3d.log("NOTICE",'Finished Parsing '+filename,
+		'Transfering Data back from Worker Thread');
 
 	postMessage({
 		'filename':		filename,
-		'mapdata':		wad.mapdata,
-		'indices':		wad.indices,
-		'flatdata':		wad.flatdata,
-		'flatindices':	wad.flatindices,
-		'atlus':		wad.atlus,
-		'flatlus':		wad.flatlus,
-		'sky':			wad.sky,
-		'spawnPos':		wad.spawnPos,
-		'spawnDir':		wad.spawnDir,
-		'things':		wad.levels[level].things,
-		'worldbb':		wad.worldbb
+		'mapdata':		this.wad.mapdata,
+		'indices':		this.wad.indices,
+		'flatdata':		this.wad.flatdata,
+		'flatindices':	this.wad.flatindices,
+		'atlus':		this.wad.atlus,
+		'flatlus':		this.wad.flatlus,
+		'sky':			this.wad.sky,
+		'spawnPos':		this.wad.spawnPos,
+		'spawnDir':		this.wad.spawnDir,
+		'states':		this.wad.states,
+		'things':		this.wad.levels[level].things,
+		'thingsatlus':	this.wad.thingsatlus,
+		'worldbb':		this.wad.worldbb
 	});
 };
 
 //
 // Level Data Lumps --------------------------------------------------------------------------------
 //
-wadLoader.getBlockmap=function(wad,view,level,lump){
-	view.seek(wad.directory[lump].filepos);
-	var len=wad.directory[lump].filepos+wad.directory[lump].size;
-	wad.levels[level].blockmap={
-		x:		view.getUint16(),
-		y:		view.getUint16(),
-		cols:	view.getUint16(),
-		rows:	view.getUint16(),
+wadLoader.getBlockmap=function(level,lump){
+	this.view.seek(this.wad.directory[lump].filepos);
+	var len=this.wad.directory[lump].filepos+this.wad.directory[lump].size;
+	this.wad.levels[level].blockmap={
+		x:		this.view.getUint16(),
+		y:		this.view.getUint16(),
+		cols:	this.view.getUint16(),
+		rows:	this.view.getUint16(),
 		offsets:[]
 	}
-	while(view.tell()<len)
-		wad.levels[level].blockmap.offsets.push(view.getUint16());
+	while(this.view.tell()<len)
+		this.wad.levels[level].blockmap.offsets.push(this.view.getUint16());
 	if(wadLoader.debug)
-		he3d.log("NOTICE",'['+level+'] BLOCKMAP Offsets',wad.levels[level].blockmap.offsets.length);
+		he3d.log("NOTICE",'['+level+'] BLOCKMAP Offsets',
+			this.wad.levels[level].blockmap.offsets.length);
 };
-wadLoader.getLinedefs=function(wad,view,level,lump){
-	wad.levels[level].linedefs=[];
-	view.seek(wad.directory[lump].filepos);
-	var len=wad.directory[lump].filepos+wad.directory[lump].size;
+wadLoader.getLinedefs=function(level,lump){
+	this.wad.levels[level].linedefs=[];
+	this.view.seek(this.wad.directory[lump].filepos);
+	var len=this.wad.directory[lump].filepos+this.wad.directory[lump].size;
 	var ldef;
-	while(view.tell()<len){
+	while(this.view.tell()<len){
 		ldef={
-			start:	view.getUint16(),
-			end:	view.getUint16(),
-			flags:	view.getInt16(),
-			type:	view.getUint16(),
-			sector:	view.getUint16(),
-			right:	view.getUint16(),
-			left:	view.getUint16()
+			start:	this.view.getUint16(),
+			end:	this.view.getUint16(),
+			flags:	this.view.getInt16(),
+			type:	this.view.getUint16(),
+			sector:	this.view.getUint16(),
+			right:	this.view.getUint16(),
+			left:	this.view.getUint16()
 		};
 		// Bit Shift flags
 		var flags=ldef.flags;
@@ -228,121 +234,123 @@ wadLoader.getLinedefs=function(wad,view,level,lump){
 			automap_hide:	(flags&(1<<7)?1:0),
 			automap_always:	(flags&(1<<8)?1:0)
 		};
-		wad.levels[level].linedefs.push(ldef);
+		this.wad.levels[level].linedefs.push(ldef);
 	}
 	if(wadLoader.debug)
-		he3d.log("NOTICE",'['+level+'] LINEDEFS',wad.levels[level].linedefs.length);
+		he3d.log("NOTICE",'['+level+'] LINEDEFS',this.wad.levels[level].linedefs.length);
 };
-wadLoader.getNodes=function(wad,view,level,lump){
-	wad.levels[level].nodes=[];
-	view.seek(wad.directory[lump].filepos);
-	var len=wad.directory[lump].filepos+wad.directory[lump].size;
-	while(view.tell()<len){
-		wad.levels[level].nodes.push({
-			x:		view.getUint16(),
-			y:		view.getUint16(),
-			ex:		view.getUint16(),
-			ey:		view.getUint16(),
-			bb_r:	view.getUint32(),
-			bb_l:	view.getUint32(),
-			c_r:	view.getUint16(),
-			c_l:	view.getUint16()
+wadLoader.getNodes=function(level,lump){
+	this.wad.levels[level].nodes=[];
+	this.view.seek(this.wad.directory[lump].filepos);
+	var len=this.wad.directory[lump].filepos+this.wad.directory[lump].size;
+	while(this.view.tell()<len){
+		this.wad.levels[level].nodes.push({
+			x:		this.view.getUint16(),
+			y:		this.view.getUint16(),
+			ex:		this.view.getUint16(),
+			ey:		this.view.getUint16(),
+			bb_r:	this.view.getUint32(),
+			bb_l:	this.view.getUint32(),
+			c_r:	this.view.getUint16(),
+			c_l:	this.view.getUint16()
 		});
 	}
 	if(wadLoader.debug)
-		he3d.log("NOTICE",'['+level+'] NODES',wad.levels[level].nodes.length);
+		he3d.log("NOTICE",'['+level+'] NODES',this.wad.levels[level].nodes.length);
 };
-wadLoader.getReject=function(wad,view,level,lump){
+wadLoader.getReject=function(level,lump){
 	return;// XXX This is no doubt wrong, but is optional
-	wad.levels[level].reject=[];
-	view.seek(wad.directory[lump].filepos);
-	var len=wad.directory[lump].filepos+wad.directory[lump].size;
-	while(view.tell()<len){
-		wad.levels[level].reject.push({
-			bit:	view.getUint16()
+	this.wad.levels[level].reject=[];
+	this.view.seek(this.wad.directory[lump].filepos);
+	var len=this.wad.directory[lump].filepos+this.wad.directory[lump].size;
+	while(this.view.tell()<len){
+		this.wad.levels[level].reject.push({
+			bit:	this.view.getUint16()
 		});
 	}
 	if(wadLoader.debug)
-		he3d.log("NOTICE",'['+level+'] REJECT',wad.levels[level].reject.length);
+		he3d.log("NOTICE",'['+level+'] REJECT',this.wad.levels[level].reject.length);
 };
-wadLoader.getSegs=function(wad,view,level,lump){
-	wad.levels[level].segs=[];
-	view.seek(wad.directory[lump].filepos);
-	var len=wad.directory[lump].filepos+wad.directory[lump].size;
-	while(view.tell()<len){
-		wad.levels[level].segs.push({
-			start:	view.getUint16(),
-			end:	view.getUint16(),
-			angle:	view.getInt16(),
-			linedef:view.getUint16(),
-			side:	view.getInt16(),
-			offset:	view.getInt16()
+wadLoader.getSegs=function(level,lump){
+	this.wad.levels[level].segs=[];
+	this.view.seek(this.wad.directory[lump].filepos);
+	var len=this.wad.directory[lump].filepos+this.wad.directory[lump].size;
+	while(this.view.tell()<len){
+		this.wad.levels[level].segs.push({
+			start:	this.view.getUint16(),
+			end:	this.view.getUint16(),
+			angle:	this.view.getInt16(),
+			linedef:this.view.getUint16(),
+			side:	this.view.getInt16(),
+			offset:	this.view.getInt16()
 		});
 	}
 	if(wadLoader.debug)
-		he3d.log("NOTICE",'['+level+'] SEGS',wad.levels[level].segs.length);
+		he3d.log("NOTICE",'['+level+'] SEGS',this.wad.levels[level].segs.length);
 };
-wadLoader.getSidedefs=function(wad,view,level,lump){
-	wad.levels[level].sidedefs=[];
-	view.seek(wad.directory[lump].filepos);
-	var len=wad.directory[lump].filepos+wad.directory[lump].size;
-	while(view.tell()<len){
-		wad.levels[level].sidedefs.push({
-			x:		view.getUint16(),
-			y:		view.getUint16(),
-			tex_u:	view.getString(8).replace(/\u0000/g,'').toUpperCase(),
-			tex_l:	view.getString(8).replace(/\u0000/g,'').toUpperCase(),
-			tex_m:	view.getString(8).replace(/\u0000/g,'').toUpperCase(),
-			sector:	view.getUint16()
+wadLoader.getSidedefs=function(level,lump){
+	this.wad.levels[level].sidedefs=[];
+	this.view.seek(this.wad.directory[lump].filepos);
+	var len=this.wad.directory[lump].filepos+this.wad.directory[lump].size;
+	while(this.view.tell()<len){
+		this.wad.levels[level].sidedefs.push({
+			x:		this.view.getUint16(),
+			y:		this.view.getUint16(),
+			tex_u:	this.view.getString(8).replace(/\u0000/g,'').toUpperCase(),
+			tex_l:	this.view.getString(8).replace(/\u0000/g,'').toUpperCase(),
+			tex_m:	this.view.getString(8).replace(/\u0000/g,'').toUpperCase(),
+			sector:	this.view.getUint16()
 		});
 	}
 	if(wadLoader.debug)
-		he3d.log("NOTICE",'['+level+'] SIDEDEFS',wad.levels[level].sidedefs.length);
+		he3d.log("NOTICE",'['+level+'] SIDEDEFS',this.wad.levels[level].sidedefs.length);
 };
-wadLoader.getSsectors=function(wad,view,level,lump){
-	wad.levels[level].ssectors=[];
-	view.seek(wad.directory[lump].filepos);
-	var len=wad.directory[lump].filepos+wad.directory[lump].size;
-	while(view.tell()<len){
-		wad.levels[level].ssectors.push({
-			count:	view.getUint16(),
-			start:	view.getUint16()
+wadLoader.getSsectors=function(level,lump){
+	this.wad.levels[level].ssectors=[];
+	this.view.seek(this.wad.directory[lump].filepos);
+	var len=this.wad.directory[lump].filepos+this.wad.directory[lump].size;
+	while(this.view.tell()<len){
+		this.wad.levels[level].ssectors.push({
+			count:	this.view.getUint16(),
+			start:	this.view.getUint16()
 		});
 	}
 	if(wadLoader.debug)
-		he3d.log("NOTICE",'['+level+'] SSECTORS',wad.levels[level].ssectors.length);
+		he3d.log("NOTICE",'['+level+'] SSECTORS',this.wad.levels[level].ssectors.length);
 };
-wadLoader.getSectors=function(wad,view,level,lump){
-	wad.levels[level].sectors=[];
-	view.seek(wad.directory[lump].filepos);
-	var len=wad.directory[lump].filepos+wad.directory[lump].size;
-	while(view.tell()<len){
-		wad.levels[level].sectors.push({
-			floor:		view.getInt16(),
-			ceiling:	view.getInt16(),
-			tex_f:		view.getString(8).replace(/\u0000/g,''),
-			tex_c:		view.getString(8).replace(/\u0000/g,''),
-			lightlevel:	view.getUint16(),
-			type:		view.getUint16(),
-			tag:		view.getUint16()
+wadLoader.getSectors=function(level,lump){
+	this.wad.levels[level].sectors=[];
+	this.view.seek(this.wad.directory[lump].filepos);
+	var len=this.wad.directory[lump].filepos+this.wad.directory[lump].size;
+	while(this.view.tell()<len){
+		this.wad.levels[level].sectors.push({
+			floor:		this.view.getInt16(),
+			ceiling:	this.view.getInt16(),
+			tex_f:		this.view.getString(8).replace(/\u0000/g,''),
+			tex_c:		this.view.getString(8).replace(/\u0000/g,''),
+			lightlevel:	this.view.getUint16(),
+			type:		this.view.getUint16(),
+			tag:		this.view.getUint16()
 		});
 	}
 	if(wadLoader.debug)
-		he3d.log("NOTICE",'['+level+'] SECTORS',wad.levels[level].sectors.length);
+		he3d.log("NOTICE",'['+level+'] SECTORS',this.wad.levels[level].sectors.length);
 };
-wadLoader.getThings=function(wad,view,level,lump){
-	wad.levels[level].things=[];
-	view.seek(wad.directory[lump].filepos);
-	var len=wad.directory[lump].filepos+wad.directory[lump].size;
+wadLoader.getThings=function(level,lump){
+	this.wad.levels[level].things=[];
+	this.view.seek(this.wad.directory[lump].filepos);
+	var len=this.wad.directory[lump].filepos+this.wad.directory[lump].size;
 	var thing;
-	while(view.tell()<len){
+	while(this.view.tell()<len){
 		thing={
-			x:		view.getInt16(),
+			x:		this.view.getInt16(),
 			y:		0,
-			z:		-view.getInt16(),
-			angle:	view.getInt16(),
-			type:	view.getInt16(),
-			flags:	view.getInt16()
+			z:		-this.view.getInt16(),
+			u:		0,
+			v:		0,
+			angle:	this.view.getInt16(),
+			type:	this.view.getInt16(),
+			flags:	this.view.getInt16()
 		};
 
 		// Bit Shift flags
@@ -354,145 +362,72 @@ wadLoader.getThings=function(wad,view,level,lump){
 			deaf:		(flags&(1<<3)?1:0),
 			mponly:		(flags&(1<<4)?1:0)
 		};
-		wad.levels[level].things.push(thing);
+		this.wad.levels[level].things.push(thing);
 	}
 	if(wadLoader.debug)
-		he3d.log("NOTICE",'['+level+'] THINGS',wad.levels[level].things.length);
+		he3d.log("NOTICE",'['+level+'] THINGS',this.wad.levels[level].things.length);
 };
-wadLoader.getVertexes=function(wad,view,level,lump){
-	wad.levels[level].vertexes=[];
-	view.seek(wad.directory[lump].filepos);
-	var len=wad.directory[lump].filepos+wad.directory[lump].size;
-	while(view.tell()<len){
-		wad.levels[level].vertexes.push({
-			x:	view.getInt16(),
-			y:	-view.getInt16()
+wadLoader.getVertexes=function(level,lump){
+	this.wad.levels[level].vertexes=[];
+	this.view.seek(this.wad.directory[lump].filepos);
+	var len=this.wad.directory[lump].filepos+this.wad.directory[lump].size;
+	while(this.view.tell()<len){
+		this.wad.levels[level].vertexes.push({
+			x:	this.view.getInt16(),
+			y:	-this.view.getInt16()
 		});
 	}
 	if(wadLoader.debug)
-		he3d.log("NOTICE",'['+level+'] VERTEXES',wad.levels[level].vertexes.length);
+		he3d.log("NOTICE",'['+level+'] VERTEXES',this.wad.levels[level].vertexes.length);
 };
 
 //
 // Graphics ----------------------------------------------------------------------------------------
 //
-wadLoader.getColorMaps=function(wad,view){
+wadLoader.getColorMaps=function(){
 	var l,len,curl,pcount,patch;
 	var offsets=[];
-	wad.colormaps=[];
-	wad.playpal=[];
+	this.wad.colormaps=[];
+	this.wad.playpal=[];
 	var tmp=new Array(16);
 	for(var a=0;a<16;a++)
 		tmp[a]=new Array(16);
 		
-	view.seek(wadLoader.getLumpOfs(wad,'COLORMAP'));
+	this.view.seek(wadLoader.getLumpOfs('COLORMAP'));
 	if(wadLoader.debug)
-		he3d.log("NOTICE","Found COLORMAP at:",view.tell());
+		he3d.log("NOTICE","Found COLORMAP at:",this.view.tell());
 	var val;
 	for(var cm=0;cm<34;cm++){
-		wad.colormaps[cm]=[];
+		this.wad.colormaps[cm]=[];
 		for(var p=0;p<256;p++)
-			wad.colormaps[cm].push(view.getUint8());
+			this.wad.colormaps[cm].push(this.view.getUint8());
 	}
 	if(wadLoader.debug)
-		he3d.log("NOTICE","Total COLORMAPs:",wad.colormaps.length);
+		he3d.log("NOTICE","Total COLORMAPs:",this.wad.colormaps.length);
 
-	view.seek(wadLoader.getLumpOfs(wad,'PLAYPAL'));
+	this.view.seek(wadLoader.getLumpOfs('PLAYPAL'));
 	if(wadLoader.debug)
-		he3d.log("NOTICE","Found PLAYPAL at:",view.tell());
+		he3d.log("NOTICE","Found PLAYPAL at:",this.view.tell());
 	for(var pal=0;pal<14;pal++){
-		wad.playpal[pal]=[];
+		this.wad.playpal[pal]=[];
 		for(var w=0;w<16;w++)
 			for(var h=0;h<16;h++)
-				tmp[w][h]=[view.getUint8(),view.getUint8(),view.getUint8()];
-		wad.playpal[pal]=tmp.reduce(function(a,b){return a.concat(b);});
+				tmp[w][h]=[this.view.getUint8(),this.view.getUint8(),this.view.getUint8()];
+		this.wad.playpal[pal]=tmp.reduce(function(a,b){return a.concat(b);});
 	}
 };
-wadLoader.getPatches=function(wad,view){
-	var l,len,curl,pcount,patch;
-	wad.patches=[];
-	wad.pnames=[];
-
-	view.seek(wadLoader.getLumpOfs(wad,'PNAMES'));
-	pcount=view.getInt32();
+wadLoader.getPatch=function(patch,poff){
+	if(!poff)
+		poff=wadLoader.getLumpOfs(patch);
+	this.view.seek(poff);
 	if(wadLoader.debug)
-		he3d.log("NOTICE","Found "+pcount+" patches in Lump:",'PNAMES');
-	for(var p=0;p<pcount;p++)
-		wad.pnames.push(view.getString(8).replace(/\u0000/g,'').toUpperCase());
-
-	var patch,poff;
-	for(var p in wad.pnames){
-		if((poff=wadLoader.getLumpOfs(wad,wad.pnames[p]))<0){
-			//he3d.log("WARNING","Missing or invalid Patch:",wad.pnames[p]);
-			continue;
-		}
-		
-		view.seek(poff);
-		patch={
-			width:	view.getUint16(),
-			height:	view.getUint16(),
-			o_left:	view.getUint16(),
-			o_top:	view.getUint16(),
-			data:	[]
-		};
-		//he3d.log(p+" "+wad.pnames[p]+"="+JSON.stringify(patch));
-		patch.data=new Array(patch.width);
-		for(var row=0;row<patch.data.length;row++){
-			patch.data[row]=new Array(patch.height);
-		}
-		
-		var offsets=new Array(patch.width);
-		for(var o=0;o<patch.width;o++){
-			offsets[o]=view.getUint32();
-		}
-
-		var rowstart=0;
-		var pixcount=0;
-		var dummy=0;
-		for(var o=0;o<patch.width;o++){
-			view.seek(poff+offsets[o]);
-			while((rowstart=view.getUint8())!=255){
-				pixcount=view.getUint8();
-				dummy=view.getUint8();
-				for(var pixi=0;pixi<pixcount;pixi++)
-					patch.data[o][rowstart+pixi]=view.getUint8();
-				dummy=view.getUint8();
-			}
-		}
-		wad.patches[wad.pnames[p]]=patch;
-	}
-};
-wadLoader.getFlatTextures=function(wad,view){
-	var l,b;
-	wad.flats=[];
-
-	var readflats=false;
-	for(l=0;l<wad.directory.length;l++){
-		switch(wad.directory[l].name){
-			case 'F1_START':case 'F1_END':readflats=!readflats;break;
-			default:
-				if(readflats){
-					view.seek(wad.directory[l].filepos);
-					var flat=[];
-					for(b=0;b<4096;b++)
-						flat.push(view.getUint8());
-					wad.flats[wad.directory[l].name]=flat;
-				}
-				break;			
-		}
-	}
-};
-wadLoader.getTitleScreen=function(wad,view){
-	var poff=wadLoader.getLumpOfs(wad,'TITLEPIC');
-	view.seek(poff);
-	if(wadLoader.debug)
-		he3d.log("NOTICE","Found TITLEPIC at:",poff);
+		he3d.log("NOTICE","Found patch "+patch+" at:",poff);
 
 	var patch={
-		width:	view.getUint16(),
-		height:	view.getUint16(),
-		o_left:	view.getUint16(),
-		o_top:	view.getUint16(),
+		width:	this.view.getUint16(),
+		height:	this.view.getUint16(),
+		o_left:	this.view.getUint16(),
+		o_top:	this.view.getUint16(),
 		data: 	[]
 	};
 
@@ -502,19 +437,19 @@ wadLoader.getTitleScreen=function(wad,view){
 		
 	var offsets=new Array(patch.width);
 	for(var o=0;o<patch.width;o++)
-		offsets[o]=view.getUint32();
+		offsets[o]=this.view.getUint32();
 
 	var rowstart=0;
 	var pixcount=0;
 	var dummy=0;
 	for(var o=0;o<patch.width;o++){
-		view.seek(poff+offsets[o]);
-		while((rowstart=view.getUint8())!=255){
-			pixcount=view.getUint8();
-			dummy=view.getUint8();
+		this.view.seek(poff+offsets[o]);
+		while((rowstart=this.view.getUint8())!=255){
+			pixcount=this.view.getUint8();
+			dummy=this.view.getUint8();
 			for(var pixi=0;pixi<pixcount;pixi++)
-				patch.data[o].push(view.getUint8());
-			dummy=view.getUint8();
+				patch.data[o][rowstart+pixi]=this.view.getUint8();
+			dummy=this.view.getUint8();
 		}
 	}
 
@@ -523,58 +458,131 @@ wadLoader.getTitleScreen=function(wad,view){
 	var pal;
 	for(var h=0;h<patch.height;h++){
 		for(var w=0;w<patch.width;w++){
-			pal=wad.colormaps[0][patch.data[w][h]];
-			if(!(wad.playpal[0][pal])){
+			pal=this.wad.colormaps[0][patch.data[w][h]];
+			if(!(this.wad.playpal[0][pal])){
 				data[idx++]=0;
 				data[idx++]=0;
 				data[idx++]=0;
 				data[idx++]=0;
 				continue;
 			}
-			data[idx++]=wad.playpal[0][pal][0];
-			data[idx++]=wad.playpal[0][pal][1];
-			data[idx++]=wad.playpal[0][pal][2];
+			data[idx++]=this.wad.playpal[0][pal][0];
+			data[idx++]=this.wad.playpal[0][pal][1];
+			data[idx++]=this.wad.playpal[0][pal][2];
 			data[idx++]=255;
 		}
 	}
 	return {data:data,width:patch.width,height:patch.height};
 };
-wadLoader.getWallTextures=function(wad,view){
+wadLoader.getPatches=function(){
+	var l,len,curl,pcount,patch;
+	this.wad.patches=[];
+	this.wad.pnames=[];
+
+	this.view.seek(wadLoader.getLumpOfs('PNAMES'));
+	pcount=this.view.getInt32();
+	if(wadLoader.debug)
+		he3d.log("NOTICE","Found "+pcount+" patches in Lump:",'PNAMES');
+	for(var p=0;p<pcount;p++)
+		this.wad.pnames.push(this.view.getString(8).replace(/\u0000/g,'').toUpperCase());
+
+	var patch,poff;
+	for(var p in this.wad.pnames){
+		if((poff=wadLoader.getLumpOfs(this.wad.pnames[p]))<0){
+			//he3d.log("WARNING","Missing or invalid Patch:",this.wad.pnames[p]);
+			continue;
+		}
+		
+		this.view.seek(poff);
+		patch={
+			width:	this.view.getUint16(),
+			height:	this.view.getUint16(),
+			o_left:	this.view.getUint16(),
+			o_top:	this.view.getUint16(),
+			data:	[]
+		};
+		//he3d.log(p+" "+this.wad.pnames[p]+"="+JSON.stringify(patch));
+		patch.data=new Array(patch.width);
+		for(var row=0;row<patch.data.length;row++){
+			patch.data[row]=new Array(patch.height);
+		}
+		
+		var offsets=new Array(patch.width);
+		for(var o=0;o<patch.width;o++){
+			offsets[o]=this.view.getUint32();
+		}
+
+		var rowstart=0;
+		var pixcount=0;
+		var dummy=0;
+		for(var o=0;o<patch.width;o++){
+			this.view.seek(poff+offsets[o]);
+			while((rowstart=this.view.getUint8())!=255){
+				pixcount=this.view.getUint8();
+				dummy=this.view.getUint8();
+				for(var pixi=0;pixi<pixcount;pixi++)
+					patch.data[o][rowstart+pixi]=this.view.getUint8();
+				dummy=this.view.getUint8();
+			}
+		}
+		this.wad.patches[this.wad.pnames[p]]=patch;
+	}
+};
+wadLoader.getFlatTextures=function(){
+	var l,b;
+	this.wad.flats=[];
+	var readflats=false;
+	for(l=0;l<this.wad.directory.length;l++){
+		switch(this.wad.directory[l].name){
+			case 'F1_START':case 'F1_END':readflats=!readflats;break;
+			default:
+				if(readflats){
+					this.view.seek(this.wad.directory[l].filepos);
+					var flat=[];
+					for(b=0;b<4096;b++)
+						flat.push(this.view.getUint8());
+					this.wad.flats[this.wad.directory[l].name]=flat;
+				}
+				break;			
+		}
+	}
+};
+wadLoader.getWallTextures=function(){
 	var l,len,curl,tcount,texture;
 	var offsets=[];
-	wad.textures=[];
-	for(l=0;l<wad.directory.length;l++){
-		switch(wad.directory[l].name){
+	this.wad.textures=[];
+	for(l=0;l<this.wad.directory.length;l++){
+		switch(this.wad.directory[l].name){
 			case 'TEXTURE1':
 			case 'TEXTURE2':
-				view.seek(wad.directory[l].filepos);
-				tcount=view.getInt32();
+				this.view.seek(this.wad.directory[l].filepos);
+				tcount=this.view.getInt32();
 				if(wadLoader.debug)
 					he3d.log("NOTICE","Found "+tcount+
-						" textures in Lump["+l+"]:",wad.directory[l].name);
+						" textures in Lump["+l+"]:",this.wad.directory[l].name);
 				for(var t=0;t<tcount;t++)
-					offsets.push(view.getInt32());
+					offsets.push(this.view.getInt32());
 				for(var t=0;t<tcount;t++){
-					view.seek(wad.directory[l].filepos+offsets[t]);
-					var tname=view.getString(8).replace(/\u0000/g,'');
+					this.view.seek(this.wad.directory[l].filepos+offsets[t]);
+					var tname=this.view.getString(8).replace(/\u0000/g,'');
 					texture={
-						masked:	view.getInt32(),
-						width:	view.getInt16(),
-						height:	view.getInt16(),
-						coldir:	view.getInt32(),
-						patchc:	view.getInt16()
+						masked:	this.view.getInt32(),
+						width:	this.view.getInt16(),
+						height:	this.view.getInt16(),
+						coldir:	this.view.getInt32(),
+						patchc:	this.view.getInt16()
 					};
 					texture.patches=[];
 					for(var p=0;p<texture.patchc;p++){
 						texture.patches.push({
-							ox:			view.getInt16(),
-							oy:			view.getInt16(),
-							patch:		wad.pnames[view.getInt16()],
-							stepdir:	view.getInt16(),
-							colormap:	view.getInt16()								
+							ox:			this.view.getInt16(),
+							oy:			this.view.getInt16(),
+							patch:		this.wad.pnames[this.view.getInt16()],
+							stepdir:	this.view.getInt16(),
+							colormap:	this.view.getInt16()								
 						});
 					}
-					wad.textures[tname]=texture;
+					this.wad.textures[tname]=texture;
 				}
 				break;
 		}
@@ -584,112 +592,116 @@ wadLoader.getWallTextures=function(wad,view){
 //
 // GL Lumps ----------------------------------------------------------------------------------------
 //
-wadLoader.getGLNodes=function(wad,view,level,lump){
-	wad.levels[level].glnodes=[];
-	view.seek(wad.directory[lump].filepos);
-	var len=wad.directory[lump].filepos+wad.directory[lump].size;
-	while(view.tell()<len){
-		if(wad.glversion=='gNd5'){
-			wad.levels[level].glnodes.push({
-				x:		view.getInt16(),
-				y:		-view.getInt16(),
-				dx:		view.getInt16(),
-				dy:		-view.getInt16(),
-				bb_r:	[-view.getInt16(),-view.getInt16(),view.getInt16(),view.getInt16()],
-				bb_l:	[-view.getInt16(),-view.getInt16(),view.getInt16(),view.getInt16()],
-				c_r:	view.getUint32(),	// Version 5 32bit
-				c_l:	view.getUint32()	// Version 5 32bit
+wadLoader.getGLNodes=function(level,lump){
+	this.wad.levels[level].glnodes=[];
+	this.view.seek(this.wad.directory[lump].filepos);
+	var len=this.wad.directory[lump].filepos+this.wad.directory[lump].size;
+	while(this.view.tell()<len){
+		if(this.wad.glversion=='gNd5'){
+			this.wad.levels[level].glnodes.push({
+				x:		this.view.getInt16(),
+				y:		-this.view.getInt16(),
+				dx:		this.view.getInt16(),
+				dy:		-this.view.getInt16(),
+				bb_r:	[-this.view.getInt16(),-this.view.getInt16(),
+							this.view.getInt16(),this.view.getInt16()],
+				bb_l:	[-this.view.getInt16(),-this.view.getInt16(),
+							this.view.getInt16(),this.view.getInt16()],
+				c_r:	this.view.getUint32(),	// Version 5 32bit
+				c_l:	this.view.getUint32()	// Version 5 32bit
 			});
 		}else{
-			wad.levels[level].glnodes.push({
-				x:		view.getInt16(),
-				y:		-view.getInt16(),
-				dx:		view.getInt16(),
-				dy:		-view.getInt16(),
-				bb_r:	[-view.getInt16(),-view.getInt16(),view.getInt16(),view.getInt16()],
-				bb_l:	[-view.getInt16(),-view.getInt16(),view.getInt16(),view.getInt16()],
-				c_r:	view.getUint16(),
-				c_l:	view.getUint16()
+			this.wad.levels[level].glnodes.push({
+				x:		this.view.getInt16(),
+				y:		-this.view.getInt16(),
+				dx:		this.view.getInt16(),
+				dy:		-this.view.getInt16(),
+				bb_r:	[-this.view.getInt16(),-this.view.getInt16(),
+							this.view.getInt16(),this.view.getInt16()],
+				bb_l:	[-this.view.getInt16(),-this.view.getInt16(),
+							this.view.getInt16(),this.view.getInt16()],
+				c_r:	this.view.getUint16(),
+				c_l:	this.view.getUint16()
 			});
 		}
 	}
 	if(wadLoader.debug)
-		he3d.log("NOTICE",'['+level+'] GL_NODES',wad.levels[level].glnodes.length);
+		he3d.log("NOTICE",'['+level+'] GL_NODES',this.wad.levels[level].glnodes.length);
 };
-wadLoader.getGLPVS=function(wad,view,level,lump){
-	wad.levels[level].glpvs=[];
+wadLoader.getGLPVS=function(level,lump){
+	this.wad.levels[level].glpvs=[];
 	return;
 };
-wadLoader.getGLSegs=function(wad,view,level,lump){
-	wad.levels[level].glsegs=[];
-	view.seek(wad.directory[lump].filepos);
-	if(wad.glversion==3||wad.glversion==4)view.getString(4);
-	var len=wad.directory[lump].filepos+wad.directory[lump].size;
-	while(view.tell()<len){
-		if(wad.glversion>2){
-			wad.levels[level].glsegs.push({
-				start:		view.getUint32(),
-				end:		view.getUint32(),
-				linedef:	view.getUint16(),
-				side:		view.getUint16(),
-				partner:	view.getUint32()
+wadLoader.getGLSegs=function(level,lump){
+	this.wad.levels[level].glsegs=[];
+	this.view.seek(this.wad.directory[lump].filepos);
+	if(this.wad.glversion==3||this.wad.glversion==4)this.view.getString(4);
+	var len=this.wad.directory[lump].filepos+this.wad.directory[lump].size;
+	while(this.view.tell()<len){
+		if(this.wad.glversion>2){
+			this.wad.levels[level].glsegs.push({
+				start:		this.view.getUint32(),
+				end:		this.view.getUint32(),
+				linedef:	this.view.getUint16(),
+				side:		this.view.getUint16(),
+				partner:	this.view.getUint32()
 			});
 		}else{
-			wad.levels[level].glsegs.push({
-				start:		view.getUint16(),
-				end:		view.getUint16(),
-				linedef:	view.getUint16(),
-				side:		view.getUint16(),
-				partner:	view.getUint16()
+			this.wad.levels[level].glsegs.push({
+				start:		this.view.getUint16(),
+				end:		this.view.getUint16(),
+				linedef:	this.view.getUint16(),
+				side:		this.view.getUint16(),
+				partner:	this.view.getUint16()
 			});
 		}
 	}
 	if(wadLoader.debug)
-		he3d.log("NOTICE",'['+level+'] GL_SEGS',wad.levels[level].glsegs.length);
+		he3d.log("NOTICE",'['+level+'] GL_SEGS',this.wad.levels[level].glsegs.length);
 };
-wadLoader.getGLSSect=function(wad,view,level,lump){
-	wad.levels[level].glssect=[];
-	view.seek(wad.directory[lump].filepos);
-	if(wad.glversion==3||wad.glversion==4)view.getString(4);
-	var len=wad.directory[lump].filepos+wad.directory[lump].size;
-	while(view.tell()<len){
-		if(wad.glversion>2){
-			wad.levels[level].glssect.push({
-				count:	view.getUint32(),
-				start:	view.getUint32()
+wadLoader.getGLSSect=function(level,lump){
+	this.wad.levels[level].glssect=[];
+	this.view.seek(this.wad.directory[lump].filepos);
+	if(this.wad.glversion==3||this.wad.glversion==4)this.view.getString(4);
+	var len=this.wad.directory[lump].filepos+this.wad.directory[lump].size;
+	while(this.view.tell()<len){
+		if(this.wad.glversion>2){
+			this.wad.levels[level].glssect.push({
+				count:	this.view.getUint32(),
+				start:	this.view.getUint32()
 			});
 		}else{
-			wad.levels[level].glssect.push({
-				count:	view.getUint16(),
-				start:	view.getUint16()
+			this.wad.levels[level].glssect.push({
+				count:	this.view.getUint16(),
+				start:	this.view.getUint16()
 			});
 		}
 	}
 	if(wadLoader.debug)
-		he3d.log("NOTICE",'['+level+'] GL_SSECT',wad.levels[level].glssect.length);
+		he3d.log("NOTICE",'['+level+'] GL_SSECT',this.wad.levels[level].glssect.length);
 };
-wadLoader.getGLVerts=function(wad,view,level,lump){
-	wad.levels[level].glverts=[];
-	view.seek(wad.directory[lump].filepos);
-	wad.glversion=view.getString(4).substr(3,1);
+wadLoader.getGLVerts=function(level,lump){
+	this.wad.levels[level].glverts=[];
+	this.view.seek(this.wad.directory[lump].filepos);
+	this.wad.glversion=this.view.getString(4).substr(3,1);
 	if(wadLoader.debug)
-		he3d.log("NOTICE","["+level+"] GL_VERSION: ","gNd"+wad.glversion);
-	var len=wad.directory[lump].filepos+wad.directory[lump].size;
-	while(view.tell()<len){
-		if(wad.glversion>1){
-			wad.levels[level].glverts.push({
-				xm:	view.getInt16(),
-				x:	view.getInt16(),
-				ym:	-view.getInt16(),
-				y:	-view.getInt16()
+		he3d.log("NOTICE","["+level+"] GL_VERSION: ","gNd"+this.wad.glversion);
+	var len=this.wad.directory[lump].filepos+this.wad.directory[lump].size;
+	while(this.view.tell()<len){
+		if(this.wad.glversion>1){
+			this.wad.levels[level].glverts.push({
+				xm:	this.view.getInt16(),
+				x:	this.view.getInt16(),
+				ym:	-this.view.getInt16(),
+				y:	-this.view.getInt16()
 			});
 		}else{
-			wad.levels[level].glverts.push({
-				x:	view.getInt16(),
-				y:	-view.getInt16()
+			this.wad.levels[level].glverts.push({
+				x:	this.view.getInt16(),
+				y:	-this.view.getInt16()
 			});
 		}
 	}
 	if(wadLoader.debug)
-		he3d.log("NOTICE",'['+level+'] GL_VERT',wad.levels[level].glverts.length);
+		he3d.log("NOTICE",'['+level+'] GL_VERT',this.wad.levels[level].glverts.length);
 };

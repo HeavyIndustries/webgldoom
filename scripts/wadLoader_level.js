@@ -12,7 +12,7 @@ wadLoader.wallLength=function(s,e){
 //	if the angle of the wall doesn't change and its the same texture,
 //	offset the xoff texture to keep it continuous?
 //
-wadLoader.buildFace=function(wad,data,front,top,bottom,ceiling,floor,sv,ev,
+wadLoader.buildFace=function(data,front,top,bottom,ceiling,floor,sv,ev,
 	t,yoff,flags,texwidth,dir,uvec,width,wchunks){
 	var height,wstart,wend,ww,peg='';
 	var xoff=front.x;
@@ -71,13 +71,13 @@ wadLoader.buildFace=function(wad,data,front,top,bottom,ceiling,floor,sv,ev,
 		if(bottom==floor)
 			break;
 
-		top-=(wad.textures[t].height-yoff)*MAP_SCALE;	
-		bottom-=(wad.textures[t].height+yoff)*MAP_SCALE;
+		top-=(this.wad.textures[t].height-yoff)*MAP_SCALE;	
+		bottom-=(this.wad.textures[t].height+yoff)*MAP_SCALE;
 		if(yoff>0)
 			yoff=0;
 	}
 };
-wadLoader.addWall=function(data,wad,map,front,back,start,end,flags){
+wadLoader.addWall=function(data,map,front,back,start,end,flags){
 	var tc=0;
 	var frontsec=map.sectors[front.sector];
 	var skybox=false;
@@ -141,7 +141,7 @@ wadLoader.addWall=function(data,wad,map,front,back,start,end,flags){
 
 		// Width
 		var wchunks=1;
-		var texwidth=wad.textures[front.tex_m].width*MAP_SCALE;
+		var texwidth=this.wad.textures[front.tex_m].width*MAP_SCALE;
 		if(width>texwidth)
 			wchunks=Math.ceil(width/texwidth);
 		var dir=(Math.sqrt(sv.x*sv.x+sv.y*sv.y)<Math.sqrt(ev.x*ev.x+ev.y*ev.y));
@@ -149,15 +149,15 @@ wadLoader.addWall=function(data,wad,map,front,back,start,end,flags){
 		if(!dir)
 			uvec=[(sv.x-ev.x)/width,(sv.y-ev.y)/width];
 
-		if(height>(wad.textures[front.tex_m].height-front.y)*MAP_SCALE){
-			var bottom=ceiling-(wad.textures[front.tex_m].height-front.y)*MAP_SCALE;
-			wadLoader.buildFace(wad,data,front,
+		if(height>(this.wad.textures[front.tex_m].height-front.y)*MAP_SCALE){
+			var bottom=ceiling-(this.wad.textures[front.tex_m].height-front.y)*MAP_SCALE;
+			wadLoader.buildFace(data,front,
 				ceiling,bottom,ceiling,floor,sv,ev,
 				front.tex_m,front.y,flags,texwidth,
 				dir,uvec,width,wchunks);
 
 		} else {
-			wadLoader.buildFace(wad,data,front,
+			wadLoader.buildFace(data,front,
 				ceiling,floor,ceiling,floor,sv,ev,
 				front.tex_m,front.y,flags,texwidth,
 				dir,uvec,width,wchunks);
@@ -183,24 +183,24 @@ wadLoader.addWall=function(data,wad,map,front,back,start,end,flags){
 
 			// Width
 			var wchunks=1;
-			var texwidth=wad.textures[front.tex_l].width*MAP_SCALE;
+			var texwidth=this.wad.textures[front.tex_l].width*MAP_SCALE;
 			if(width>texwidth)
 				wchunks=Math.ceil(width/texwidth);
 
-			if(back&&flags.peg_lower&&height<(wad.textures[front.tex_l].height)*MAP_SCALE){
+			if(back&&flags.peg_lower&&height<(this.wad.textures[front.tex_l].height)*MAP_SCALE){
 				var tyoff=0;//(height+floor)+front.y;
-				wadLoader.buildFace(wad,data,front,
+				wadLoader.buildFace(data,front,
 					ceiling,floor,ceiling,floor,sv,ev,
 					front.tex_l,tyoff,flags,texwidth,
 					dir,uvec,width,wchunks);
-			}else if(height>(wad.textures[front.tex_l].height-front.y)*MAP_SCALE){
-				var bottom=ceiling-(wad.textures[front.tex_l].height*MAP_SCALE);
-				wadLoader.buildFace(wad,data,front,
+			}else if(height>(this.wad.textures[front.tex_l].height-front.y)*MAP_SCALE){
+				var bottom=ceiling-(this.wad.textures[front.tex_l].height*MAP_SCALE);
+				wadLoader.buildFace(data,front,
 					ceiling,bottom,ceiling,floor,sv,ev,
 					front.tex_l,0,flags,texwidth,
 					dir,uvec,width,wchunks);
 			}else{
-				wadLoader.buildFace(wad,data,front,
+				wadLoader.buildFace(data,front,
 					ceiling,floor,ceiling,floor,sv,ev,
 					front.tex_l,front.y,flags,texwidth,
 					dir,uvec,width,wchunks);
@@ -220,11 +220,11 @@ wadLoader.addWall=function(data,wad,map,front,back,start,end,flags){
 
 			// Width
 			var wchunks=1;
-			var texwidth=wad.textures[front.tex_m].width*MAP_SCALE;
+			var texwidth=this.wad.textures[front.tex_m].width*MAP_SCALE;
 			if(width>texwidth)
 				wchunks=Math.ceil(width/texwidth);
 
-			wadLoader.buildFace(wad,data,front,
+			wadLoader.buildFace(data,front,
 				ceiling,floor,ceiling,floor,sv,ev,
 				front.tex_m,front.y,flags,texwidth,
 				dir,uvec,width,wchunks);
@@ -244,7 +244,7 @@ wadLoader.addWall=function(data,wad,map,front,back,start,end,flags){
 
 			// Width
 			var wchunks=1;
-			var texwidth=wad.textures[front.tex_u].width*MAP_SCALE;
+			var texwidth=this.wad.textures[front.tex_u].width*MAP_SCALE;
 			if(width>texwidth)
 				wchunks=Math.ceil(width/texwidth);
 			var dir=(Math.sqrt(sv.x*sv.x+sv.y*sv.y)<Math.sqrt(ev.x*ev.x+ev.y*ev.y));
@@ -252,16 +252,17 @@ wadLoader.addWall=function(data,wad,map,front,back,start,end,flags){
 			if(!dir)
 				uvec=[(sv.x-ev.x)/width,(sv.y-ev.y)/width];
 
-			if(back&&!flags.peg_upper&&height>(wad.textures[front.tex_u].height-front.y)*MAP_SCALE){
-				var bottom=ceiling-(wad.textures[front.tex_u].height)*MAP_SCALE;
-				wadLoader.buildFace(wad,data,front,
+			if(back&&!flags.peg_upper&&
+				height>(this.wad.textures[front.tex_u].height-front.y)*MAP_SCALE){
+				var bottom=ceiling-(this.wad.textures[front.tex_u].height)*MAP_SCALE;
+				wadLoader.buildFace(data,front,
 					ceiling,bottom,ceiling,floor,sv,ev,
 					front.tex_u,0,flags,texwidth,
 					dir,uvec,width,wchunks);
-			}else if(height>(wad.textures[front.tex_u].height-front.y)*MAP_SCALE){
+			}else if(height>(this.wad.textures[front.tex_u].height-front.y)*MAP_SCALE){
 
-				var bottom=ceiling-(wad.textures[front.tex_u].height-front.y)*MAP_SCALE;
-				wadLoader.buildFace(wad,data,front,
+				var bottom=ceiling-(this.wad.textures[front.tex_u].height-front.y)*MAP_SCALE;
+				wadLoader.buildFace(data,front,
 					ceiling,bottom,ceiling,floor,sv,ev,
 					front.tex_u,front.y,flags,texwidth,
 					dir,uvec,width,wchunks);
@@ -270,7 +271,7 @@ wadLoader.addWall=function(data,wad,map,front,back,start,end,flags){
 				if(!flags.peg_upper)
 					flags.peg_lower='lower';
 			
-				wadLoader.buildFace(wad,data,front,
+				wadLoader.buildFace(data,front,
 					ceiling,floor,ceiling,floor,sv,ev,
 					front.tex_u,front.y,flags,texwidth,
 					dir,uvec,width,wchunks);
@@ -279,7 +280,7 @@ wadLoader.addWall=function(data,wad,map,front,back,start,end,flags){
 	}
 };
 
-wadLoader.buildSSector=function(wad,data,map,node,side,ss){
+wadLoader.buildSSector=function(data,map,node,side,ss){
 	var off=map.glssect[ss].start;
 	var lines=[];
 	for(var segno=0;segno<map.glssect[ss].count;segno++){
@@ -293,26 +294,26 @@ wadLoader.buildSSector=function(wad,data,map,node,side,ss){
 
 		if(map.glsegs[off+segno].side==0){
 			if(line.left){
-				wadLoader.addWall(data,wad,map,map.sidedefs[line.right],
+				wadLoader.addWall(data,map,map.sidedefs[line.right],
 					map.sidedefs[line.left],start,end,line.flags);
 			}else{
-				wadLoader.addWall(data,wad,map,map.sidedefs[line.right],null,
+				wadLoader.addWall(data,map,map.sidedefs[line.right],null,
 					start,end,line.flags);
 			}
 		} else {
 			if(line.right){
-				wadLoader.addWall(data,wad,map,map.sidedefs[line.left],
+				wadLoader.addWall(data,map,map.sidedefs[line.left],
 					map.sidedefs[line.right],start,end,line.flags);
 			}else{
-				wadLoader.addWall(data,wad,map,map.sidedefs[line.left],null,
+				wadLoader.addWall(data,map,map.sidedefs[line.left],null,
 					start,end,line.flags);
 			}
 		}
 	}
 
 	// Get Thing Heights
-	wadLoader.findThingInSSector(wad,map,(!side)?node.bb_r:node.bb_l,data.floor);
-//	wadLoader.updateHeightMap(wad,map,(!side)?node.bb_r:node.bb_l,data.floor);
+	wadLoader.findThingInSSector(map,(!side)?node.bb_r:node.bb_l,data.floor);
+//	wadLoader.updateHeightMap(map,(!side)?node.bb_r:node.bb_l,data.floor);
 
 	// World Bounding Box
 	if(!side){
@@ -581,21 +582,10 @@ wadLoader.buildSSector=function(wad,data,map,node,side,ss){
 	data.flattextures[data.tex_c].count++;
 };
 
-wadLoader.findThingInSSector=function(wad,map,bb,floor){
-	for(var t=0;t<map.things.length;t++){
-		if((map.things[t].z>=bb[0]&&map.things[t].z<=bb[1])&&
-			(map.things[t].x>=bb[2]&&map.things[t].x<=bb[3])){
-			map.things[t].y=floor;
-			if(wadLoader.debug)
-				he3d.log("DEBUG","Found Thing["+t+"]","Height: "+map.things[t].y);
-		}
-	}
-};
-
-wadLoader.buildLevel=function(wad,level){
-	he3d.log("NOTICE","Level Vertexes: ",
-		wad.levels[level].vertexes.length+wad.levels[level].glverts.length);
-	var map=wad.levels[level];
+wadLoader.buildLevel=function(level){
+	he3d.log("DEBUG","Level Vertexes: ",
+		this.wad.levels[level].vertexes.length+this.wad.levels[level].glverts.length);
+	var map=this.wad.levels[level];
 
 	var data={
 		worldbb:[null,null,null,null,0,0],
@@ -624,41 +614,41 @@ wadLoader.buildLevel=function(wad,level){
 	for(var n=0;n<map.glnodes.length;n++){
 		node=map.glnodes[n];
 		if(node.c_r&SUBSECTOR)
-			wadLoader.buildSSector(wad,data,map,node,0,node.c_r&~SUBSECTOR);
+			wadLoader.buildSSector(data,map,node,0,node.c_r&~SUBSECTOR);
 		if(node.c_l&SUBSECTOR)
-			wadLoader.buildSSector(wad,data,map,node,1,node.c_l&~SUBSECTOR);
+			wadLoader.buildSSector(data,map,node,1,node.c_l&~SUBSECTOR);
 	}
 
-	wad.spawnPos=[0,0,0];
-	wad.spawnDir=0;
+	this.wad.spawnPos=[0,0,0];
+	this.wad.spawnDir=0;
 	for(var t=0;t<map.things.length;t++){
 		if(map.things[t].type==1){
-			wad.spawnPos=[
+			this.wad.spawnPos=[
 				-map.things[t].x*MAP_SCALE,
 				((map.things[t].y*MAP_SCALE)+40),
 				-map.things[t].z*MAP_SCALE
 			];
-			wad.spawnDir=map.things[t].angle-90;
-			if(wad.spawnDir<0)wad.spawnDir+=360;
-			he3d.log("NOTICE","Found Spawn Point:",wad.spawnPos[0]+"x"+wad.spawnPos[2]);
+			this.wad.spawnDir=map.things[t].angle-90;
+			if(this.wad.spawnDir<0)this.wad.spawnDir+=360;
+			he3d.log("NOTICE","Found Spawn Point:",this.wad.spawnPos[0]+"x"+this.wad.spawnPos[2]);
 		}
 	}
 
-	wad.worldbb=data.worldbb;
-	he3d.log("DEBUG","World Bounding Box",wad.worldbb);
+	this.wad.worldbb=data.worldbb;
+	he3d.log("DEBUG","World Bounding Box",this.wad.worldbb);
 
 	he3d.log("DEBUG","Building Textures"," ");
-	wadLoader.buildWallTextures(wad,data);
-	wadLoader.buildFlatTextures(wad,data);
-	wadLoader.buildSkyTextures(wad,data);
+	wadLoader.buildWallTextures(data);
+	wadLoader.buildFlatTextures(data);
+	wadLoader.buildSkyTextures(data);
 
 	he3d.log("DEBUG","Total Wall Triangles",data.verts.length/3);
-	wad.mapdata=he3d.tools.interleaveFloat32Arrays([3,2,1,1],
+	this.wad.mapdata=he3d.tools.interleaveFloat32Arrays([3,2,1,1],
 		[data.verts,data.uv,data.brightness,data.type]);
-	wad.indices=data.indices;
+	this.wad.indices=data.indices;
 	
 	he3d.log("DEBUG","Total Flats Triangles",data.flats.verts.length/3);
-	wad.flatdata=he3d.tools.interleaveFloat32Arrays([3,2,1,1],
+	this.wad.flatdata=he3d.tools.interleaveFloat32Arrays([3,2,1,1],
 		[data.flats.verts,data.flats.uv,data.flats.brightness,data.flats.type]);
-	wad.flatindices=data.flats.indices;
+	this.wad.flatindices=data.flats.indices;
 };
