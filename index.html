@@ -58,13 +58,21 @@
 					<a href="https://github.com/HeavyIndustries/webgldoom" target="_blank">
 					https://github.com/HeavyIndustries/webgldoom</a>. At some point we plan to
 					do a technical write up on how we got to this stage.</p>
-				<p>This demo uses excellent <a href="https://github.com/vjeux/jDataView"
+				<p>This demo uses the excellent <a href="https://github.com/vjeux/jDataView"
 					target="_blank">jDataView.js</a> binary file reader we can pull out all the map
 					and texture	information from the wad file then construct the data into a
 					WebGL buffer. The rendering framework behind this demo is using our custom
 					built WebGL	engine <a href="https://github.com/HeavyIndustries/he3d"
 					target="_blank">he3d</a> which we'll not go into, its not important to this
 					demo, it just hides a lot of the html5/webgl/javascript gumpf away.</p>
+
+				<h2>24th December 2012 Update:</h2>
+				<p>THINGS! (Doom's name for the 2d sprites you see on the map).
+					These are now rendering in their spawnstate and don't animate or move yet, that
+					will probably be the next stage. They also always face the camera, which is
+					correct but not the best way of drawing them. Ideally they would only rotate on
+					one axis, if you fly the camera above and look down you will notice they are
+					flat on the ground. This is the Mario64 way of billboarding.</p>					
 					
 				<h2>The Demo</h2>
 				<p>Yeah yeah yeah, enough with the technical nonsense, click on one of the links

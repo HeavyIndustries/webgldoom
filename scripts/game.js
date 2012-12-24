@@ -281,8 +281,6 @@ he3d.game.waitAssets=function(){
 	// Things Buffers
 	he3d.game.things.count=0;
 	he3d.game.things.mvMatrix=he3d.m.mat4.create();
-	he3d.game.things.rotMat=he3d.m.mat4.create();
-	he3d.game.things.up=he3d.m.vec3.create([0,1,0]);
 	he3d.game.things.buildActors();
 
 	he3d.console.toggle(false);
