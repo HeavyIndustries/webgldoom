@@ -180,7 +180,7 @@ wadLoader.parse=function(filename,level,data){
 		'sky':			this.wad.sky,
 		'spawnPos':		this.wad.spawnPos,
 		'spawnDir':		this.wad.spawnDir,
-		'states':		this.wad.states,
+		'sprites':		this.wad.sprites,
 		'things':		this.wad.levels[level].things,
 		'thingsatlus':	this.wad.thingsatlus,
 		'worldbb':		this.wad.worldbb
@@ -344,10 +344,8 @@ wadLoader.getThings=function(level,lump){
 	while(this.view.tell()<len){
 		thing={
 			x:		this.view.getInt16(),
-			y:		0,
+			y:		-999,
 			z:		-this.view.getInt16(),
-			u:		0,
-			v:		0,
 			angle:	this.view.getInt16(),
 			type:	this.view.getInt16(),
 			flags:	this.view.getInt16()

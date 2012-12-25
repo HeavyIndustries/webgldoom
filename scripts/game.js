@@ -88,7 +88,7 @@ he3d.game.map.progress=function(e){
 	this.map.sky=e.data.sky;
 	this.map.spawnPos=e.data.spawnPos;
 	this.map.spawnDir=e.data.spawnDir;
-	this.map.states=e.data.states;
+	this.map.sprites=e.data.sprites;
 	this.map.things=e.data.things;
 	this.map.thingsatlus=e.data.thingsatlus;
 	this.map.worldbb=e.data.worldbb;
@@ -549,25 +549,27 @@ he3d.game.splash.draw=function(){
 he3d.game.things.buildActors=function(){
 	var aname,verts,texcoords,data,vbo,w,h;
 	var indices=new Uint16Array([0,1,2,0,2,3]);
-	for(var s in he3d.game.map.states){
-		if(!he3d.game.map.states)
+	for(var s in he3d.game.map.sprites){
+		if(!he3d.game.map.sprites)
 			continue;
-		aname='a_'+he3d.game.map.states[s].height+"_"+he3d.game.map.states[s].width;
+		aname='a_'+he3d.game.map.sprites[s].height+"_"+he3d.game.map.sprites[s].width;
+		he3d.game.map.sprites[s].actor=aname;
 		if(!he3d.game.things.actors[aname]){
 			he3d.game.things.actors[aname]={};
-			h=he3d.game.map.states[s].height/2;
-			w=he3d.game.map.states[s].width/2;
+			h=he3d.game.map.sprites[s].height/2;
+			w=he3d.game.map.sprites[s].width/2;
 			verts=new Float32Array([
-				-w, -h, 0,
 				-w,  h, 0,
-				 w,  h, 0,
-				 w, -h, 0
+				-w, -h, 0,
+				 w, -h, 0,
+				 w,  h, 0
 			]);
 			texcoords=new Float32Array([
-				he3d.game.map.states[s].uv[1],he3d.game.map.states[s].uv[2],
-				he3d.game.map.states[s].uv[1],he3d.game.map.states[s].uv[0],
-				he3d.game.map.states[s].uv[3],he3d.game.map.states[s].uv[0],
-				he3d.game.map.states[s].uv[3],he3d.game.map.states[s].uv[2]
+				he3d.game.map.sprites[s].uv[1],he3d.game.map.sprites[s].uv[0],
+				he3d.game.map.sprites[s].uv[1],he3d.game.map.sprites[s].uv[2],
+				he3d.game.map.sprites[s].uv[3],he3d.game.map.sprites[s].uv[2],
+				he3d.game.map.sprites[s].uv[3],he3d.game.map.sprites[s].uv[0]
+				
 			]);
 			
 			data=he3d.tools.interleaveFloat32Arrays([3,2],[verts,texcoords]);
@@ -583,27 +585,21 @@ he3d.game.things.buildActors=function(){
 		}
 	}
 };
-
+var once=true;
 he3d.game.things.draw=function(){
 	if(!he3d.game.things.show)
 		return;
 	he3d.r.changeProgram('things');
 	he3d.gl.uniform1i(he3d.r.curProgram.uniforms['texture'],he3d.game.things.vbo.texture);
 
-	he3d.gl.disable(he3d.gl.CULL_FACE);
-	he3d.gl.enable(he3d.gl.BLEND);
-
-	var aname;
+	var sprite;
 	he3d.game.things.count=0;
 	for(var t=0;t<he3d.game.map.things.length;t++){
-		if(!he3d.game.map.things[t].type||
-			!he3d.game.map.states[he3d.game.map.things[t].type])
+		if(!he3d.game.map.things[t].spawnstate||
+			(sprite=he3d.game.things.getSpriteName(he3d.game.map.things[t].spawnstate))==null)
 			continue;
 
-		aname='a_'+he3d.game.map.states[he3d.game.map.things[t].type].height+"_"+
-			he3d.game.map.states[he3d.game.map.things[t].type].width;
-
-		he3d.gl.bindBuffer(he3d.gl.ARRAY_BUFFER,he3d.game.things.actors[aname].buf_data);
+		he3d.gl.bindBuffer(he3d.gl.ARRAY_BUFFER,he3d.game.things.actors[sprite.actor].buf_data);
 	
 		he3d.gl.enableVertexAttribArray(he3d.r.curProgram.attributes['aPosition']);
 		he3d.gl.vertexAttribPointer(he3d.r.curProgram.attributes['aPosition'],
@@ -616,7 +612,7 @@ he3d.game.things.draw=function(){
 		he3d.m.mat4.set(he3d.r.mvMatrix,he3d.game.things.mvMatrix);
 		he3d.m.mat4.translate(he3d.game.things.mvMatrix,[
 			he3d.game.map.things[t].x,
-			he3d.game.map.things[t].y+(he3d.game.map.states[he3d.game.map.things[t].type].height/2),
+			he3d.game.map.things[t].y+(sprite.height/2),
 			he3d.game.map.things[t].z
 		]);
 
@@ -625,15 +621,22 @@ he3d.game.things.draw=function(){
 			false,he3d.game.things.mvMatrix);
 		
 		he3d.gl.bindBuffer(he3d.gl.ELEMENT_ARRAY_BUFFER,
-			he3d.game.things.actors[aname].buf_indices);
+			he3d.game.things.actors[sprite.actor].buf_indices);
 		he3d.gl.drawElements(he3d.gl.TRIANGLES,
-			he3d.game.things.actors[aname].indices,he3d.gl.UNSIGNED_SHORT,0);
+			he3d.game.things.actors[sprite.actor].indices,he3d.gl.UNSIGNED_SHORT,0);
 
 		he3d.game.things.count++;
 	}
+};
 
-	he3d.gl.disable(he3d.gl.BLEND);
-	he3d.gl.enable(he3d.gl.CULL_FACE);
+he3d.game.things.getSpriteName=function(state){
+	// Needs angle checking! the thing.angle might be wrong in WADLOADER
+	var name=spritenames[state_t[state].sprite]+		// Rootname
+		(String.fromCharCode(65+state_t[state].frame));	// Frame
+	for(var s=0;s<he3d.game.map.sprites.length;s++)
+		if(he3d.game.map.sprites[s].name.substring(0,5)==name)
+			return he3d.game.map.sprites[s];
+	return null;
 };
 
 he3d.game.things.update=function(){

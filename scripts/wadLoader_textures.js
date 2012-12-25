@@ -185,7 +185,7 @@ wadLoader.buildSpriteTextures=function(spritenames){
 						if(this.wad.directory[l].name.substring(0,4)==spritenames[s].name){
 							sprite={
 								stateid:spritenames[s].stateid,
-								n:		this.wad.directory[l].name,
+								name:	this.wad.directory[l].name,
 								patch:	wadLoader.getPatch(this.wad.directory[l].name,
 											this.wad.directory[l].filepos),
 								packed: false
@@ -218,7 +218,7 @@ wadLoader.buildSpriteTextures=function(spritenames){
 		height:1024,
 		width:1024
 	};
-	this.wad.states=[];
+	this.wad.sprites=[];
 	this.wad.thingsatlus.data=new Uint8Array(
 		this.wad.thingsatlus.width*this.wad.thingsatlus.height*4);
 	for(var cl=0;cl<this.wad.thingsatlus.data.length;cl+=4){
@@ -255,7 +255,8 @@ wadLoader.buildSpriteTextures=function(spritenames){
 				this.wad.thingsatlus.data[off++]=sprite.patch.data[d++];
 			}
 		}
-		this.wad.states[sprite.stateid]={
+		this.wad.sprites.push({
+			name:	sprite.name,
 			uv:[
 				((cr*maxh)+vpad)/this.wad.thingsatlus.height,
 				(cc+hpad)/this.wad.thingsatlus.width,
@@ -264,7 +265,7 @@ wadLoader.buildSpriteTextures=function(spritenames){
 			],
 			height: sprite.patch.height,
 			width:	sprite.patch.width
-		}
+		});
 		cc+=sprite.patch.width;
 		hpad++;
 		sprite.packed=true;

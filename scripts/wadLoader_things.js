@@ -14,11 +14,6 @@
 //
 //	Some things glow with a light pulse effect
 //
-// 	GODAMNIT! things[t].height is irrelivant ={
-//	Probably just have to read the SPRITE height
-//	to work out how tall it actually is, then build
-//	the billboard quad based on that instead.
-//
 
 //
 // XXX This is crazy loopy for deduping, must be a way to reduce it
