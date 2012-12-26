@@ -22,7 +22,12 @@ wadLoader.buildThings=function(level){
 	var uThings=[],uT,dupe=false;
 	var sprites=[],spritename;
 	for(var t in this.wad.levels[level].things){
+		this.wad.levels[level].things[t].curstate=statenum_t.S_NULL;
+		this.wad.levels[level].things[t].tic=0;
+		
 		if((uT=wadLoader.LookupThing(this.wad.levels[level].things[t].type))!=null){
+			this.wad.levels[level].things[t].curstate=THINGS[uT].spawnstate;
+			
 			// Clone Thing Structure
 			for(var a in THINGS[uT])
 				this.wad.levels[level].things[t][a]=THINGS[uT][a];

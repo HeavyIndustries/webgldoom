@@ -48,6 +48,9 @@ const MAX_THINGS=137;
 const NOINDEX=65536;
 const SUBSECTOR=(1<<15);
 const VERT_IS_GL=(1<<15);
+const ANIM_FPS=35.0;
+const FF_FRAMEMASK=0x7fff;
+const FF_FULLBRIGHT=0x8000;
 
 // Model type ID
 var mobjtype_t={

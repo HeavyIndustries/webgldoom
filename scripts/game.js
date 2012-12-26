@@ -28,7 +28,6 @@ he3d.game={
 	sky:		{show:true,vbo:{}},
 	splash:		{show:true,vbo:{},loaded:false},
 	things:		{
-		actors:	[],
 		show:	true,
 		vbo:	{}
 	},
@@ -281,7 +280,7 @@ he3d.game.waitAssets=function(){
 	// Things Buffers
 	he3d.game.things.count=0;
 	he3d.game.things.mvMatrix=he3d.m.mat4.create();
-	he3d.game.things.buildActors();
+	he3d.game.things.buildSprites();
 
 	he3d.console.toggle(false);
 	he3d.mode=he3d.game.loaded;
@@ -546,16 +545,13 @@ he3d.game.splash.draw=function(){
 //
 // Things ------------------------------------------------------------------------------------------
 //
-he3d.game.things.buildActors=function(){
+he3d.game.things.buildSprites=function(){
 	var aname,verts,texcoords,data,vbo,w,h;
 	var indices=new Uint16Array([0,1,2,0,2,3]);
 	for(var s in he3d.game.map.sprites){
 		if(!he3d.game.map.sprites)
 			continue;
-		aname='a_'+he3d.game.map.sprites[s].height+"_"+he3d.game.map.sprites[s].width;
-		he3d.game.map.sprites[s].actor=aname;
-		if(!he3d.game.things.actors[aname]){
-			he3d.game.things.actors[aname]={};
+
 			h=he3d.game.map.sprites[s].height/2;
 			w=he3d.game.map.sprites[s].width/2;
 			verts=new Float32Array([
@@ -573,33 +569,33 @@ he3d.game.things.buildActors=function(){
 			]);
 			
 			data=he3d.tools.interleaveFloat32Arrays([3,2],[verts,texcoords]);
-			he3d.game.things.actors[aname].buf_data=he3d.gl.createBuffer();
-			he3d.gl.bindBuffer(he3d.gl.ARRAY_BUFFER,he3d.game.things.actors[aname].buf_data);
+			he3d.game.map.sprites[s].vbo={};
+			he3d.game.map.sprites[s].vbo.buf_data=he3d.gl.createBuffer();
+			he3d.gl.bindBuffer(he3d.gl.ARRAY_BUFFER,he3d.game.map.sprites[s].vbo.buf_data);
 			he3d.gl.bufferData(he3d.gl.ARRAY_BUFFER,data,he3d.gl.STATIC_DRAW);
 
-			he3d.game.things.actors[aname].buf_indices=he3d.gl.createBuffer();
-			he3d.game.things.actors[aname].indices=indices.length;
+			he3d.game.map.sprites[s].vbo.buf_indices=he3d.gl.createBuffer();
+			he3d.game.map.sprites[s].vbo.indices=indices.length;
 			he3d.gl.bindBuffer(he3d.gl.ELEMENT_ARRAY_BUFFER,
-				he3d.game.things.actors[aname].buf_indices);
+				he3d.game.map.sprites[s].vbo.buf_indices);
 			he3d.gl.bufferData(he3d.gl.ELEMENT_ARRAY_BUFFER,indices,he3d.gl.STATIC_DRAW);
-		}
 	}
 };
-var once=true;
+
 he3d.game.things.draw=function(){
 	if(!he3d.game.things.show)
 		return;
 	he3d.r.changeProgram('things');
 	he3d.gl.uniform1i(he3d.r.curProgram.uniforms['texture'],he3d.game.things.vbo.texture);
 
-	var sprite;
 	he3d.game.things.count=0;
+	var thing;
 	for(var t=0;t<he3d.game.map.things.length;t++){
-		if(!he3d.game.map.things[t].spawnstate||
-			(sprite=he3d.game.things.getSpriteName(he3d.game.map.things[t].spawnstate))==null)
+		thing=he3d.game.map.things[t];
+		if(!thing.sprite)
 			continue;
 
-		he3d.gl.bindBuffer(he3d.gl.ARRAY_BUFFER,he3d.game.things.actors[sprite.actor].buf_data);
+		he3d.gl.bindBuffer(he3d.gl.ARRAY_BUFFER,thing.sprite.vbo.buf_data);
 	
 		he3d.gl.enableVertexAttribArray(he3d.r.curProgram.attributes['aPosition']);
 		he3d.gl.vertexAttribPointer(he3d.r.curProgram.attributes['aPosition'],
@@ -611,19 +607,17 @@ he3d.game.things.draw=function(){
 
 		he3d.m.mat4.set(he3d.r.mvMatrix,he3d.game.things.mvMatrix);
 		he3d.m.mat4.translate(he3d.game.things.mvMatrix,[
-			he3d.game.map.things[t].x,
-			he3d.game.map.things[t].y+(sprite.height/2),
-			he3d.game.map.things[t].z
+			thing.x,
+			thing.y+(thing.sprite.height/2),
+			thing.z
 		]);
 
 		he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uPMatrix'],false,he3d.r.pMatrix);
 		he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uMVMatrix'],
 			false,he3d.game.things.mvMatrix);
 		
-		he3d.gl.bindBuffer(he3d.gl.ELEMENT_ARRAY_BUFFER,
-			he3d.game.things.actors[sprite.actor].buf_indices);
-		he3d.gl.drawElements(he3d.gl.TRIANGLES,
-			he3d.game.things.actors[sprite.actor].indices,he3d.gl.UNSIGNED_SHORT,0);
+		he3d.gl.bindBuffer(he3d.gl.ELEMENT_ARRAY_BUFFER,thing.sprite.vbo.buf_indices);
+		he3d.gl.drawElements(he3d.gl.TRIANGLES,thing.sprite.vbo.indices,he3d.gl.UNSIGNED_SHORT,0);
 
 		he3d.game.things.count++;
 	}
@@ -632,7 +626,7 @@ he3d.game.things.draw=function(){
 he3d.game.things.getSpriteName=function(state){
 	// Needs angle checking! the thing.angle might be wrong in WADLOADER
 	var name=spritenames[state_t[state].sprite]+		// Rootname
-		(String.fromCharCode(65+state_t[state].frame));	// Frame
+		(String.fromCharCode(65+(state_t[state].frame&FF_FRAMEMASK)));	// Frame
 	for(var s=0;s<he3d.game.map.sprites.length;s++)
 		if(he3d.game.map.sprites[s].name.substring(0,5)==name)
 			return he3d.game.map.sprites[s];
@@ -640,7 +634,24 @@ he3d.game.things.getSpriteName=function(state){
 };
 
 he3d.game.things.update=function(){
-	return;
+	var thing;
+	for(var t=0;t<he3d.game.map.things.length;t++){
+		thing=he3d.game.map.things[t]
+		if(thing.curstate==statenum_t.S_NULL)
+			continue;
+
+		// Move to next state
+		if(state_t[thing.curstate].tics>0&&
+			(thing.tic+=ANIM_FPS*he3d.timer.delta)>=state_t[thing.curstate].tics){
+			thing.curstate=state_t[thing.curstate].nextstate;
+			thing.tic=0;
+			thing.sprite=he3d.game.things.getSpriteName(thing.curstate);
+		}
+
+		// Get spritename
+		if(!thing.sprite)
+			thing.sprite=he3d.game.things.getSpriteName(thing.curstate);
+	}
 };
 
 //

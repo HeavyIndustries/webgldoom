@@ -184,7 +184,6 @@ wadLoader.buildSpriteTextures=function(spritenames){
 					for(var s=0;s<spritenames.length;s++){
 						if(this.wad.directory[l].name.substring(0,4)==spritenames[s].name){
 							sprite={
-								stateid:spritenames[s].stateid,
 								name:	this.wad.directory[l].name,
 								patch:	wadLoader.getPatch(this.wad.directory[l].name,
 											this.wad.directory[l].filepos),
@@ -214,9 +213,9 @@ wadLoader.buildSpriteTextures=function(spritenames){
 	var cr=0,cc=0;
 	var off,d=0,vpad=1,hpad=1;
 	this.wad.thingsatlus={
-		data:null,
-		height:1024,
-		width:1024
+		data:	null,
+		height:	1024,
+		width:	1024
 	};
 	this.wad.sprites=[];
 	this.wad.thingsatlus.data=new Uint8Array(
