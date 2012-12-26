@@ -133,7 +133,7 @@ wadLoader.addWall=function(data,map,front,back,start,end,flags){
 	var peg='';
 
 	// 1 height chunk wall -----
-	if(!back){
+	if(!back&&front.tex_m!='-'){
 		// Height
 		var ceiling=frontsec.ceiling*MAP_SCALE;
 		var floor=frontsec.floor*MAP_SCALE;

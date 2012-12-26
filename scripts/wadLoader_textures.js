@@ -214,8 +214,8 @@ wadLoader.buildSpriteTextures=function(spritenames){
 	var off,d=0,vpad=1,hpad=1;
 	this.wad.thingsatlus={
 		data:	null,
-		height:	1024,
-		width:	1024
+		height:	2048,
+		width:	2048
 	};
 	this.wad.sprites=[];
 	this.wad.thingsatlus.data=new Uint8Array(

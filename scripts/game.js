@@ -636,8 +636,8 @@ he3d.game.things.getSpriteName=function(state){
 he3d.game.things.update=function(){
 	var thing;
 	for(var t=0;t<he3d.game.map.things.length;t++){
-		thing=he3d.game.map.things[t]
-		if(thing.curstate==statenum_t.S_NULL)
+		thing=he3d.game.map.things[t];
+		if(thing.curstate==statenum_t.S_NULL||!state_t[thing.curstate])
 			continue;
 
 		// Move to next state
