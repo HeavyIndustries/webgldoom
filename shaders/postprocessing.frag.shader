@@ -73,29 +73,6 @@ void main (void) {
 	if(opt_blur)
 		color+=0.8*texture2D(blurTexture,vTextureCoord.st);
 
-
-/*
-	// Gets pixel coordinate from 4 to the right, and 2 above
-//	vec2 otherPixelCoord=vTextureCoord+vec2(uSize.x*4.0, uSize.y*2.0);
-//	vec4 otherPixelColor=texture2D(texture,otherPixelCoord.st);
-
-	// Pixelate 
-	if(FILTER_PIXELATE){
-		float pixelsize=15.0;
-		vec2 uv=vTextureCoord.xy;
-		float dx=pixelsize*(1./uSize[0]);
-		float dy=pixelsize*(1./uSize[1]);
-		vec2 coord=vec2(dx*floor(uv.x/dx),dy*floor(uv.y/dy));
-		color=vec4(texture2D(texture,coord).rgb,1.0);
-	}
-
-	// RGB Scan Lines
-	if(FILTER_SCANLINES){
-		float vlines=360.0;
-		vec2 scanlines=vec2(sin(vTextureCoord.y*vlines),cos(vTextureCoord.y*vlines));
-		color.rgb*=scanlines.xyx;
-	}
-*/
 	// Vignette
 	if(FILTER_VIGNETTE&&vignette>0.0){
 		float dist=distance(vTextureCoord,vec2(0.5,0.5));
@@ -105,20 +82,6 @@ void main (void) {
 		// Bloody Screen! SO REAL!
 		if(damage>50.0)
 			color.r+=min(1.0,(damage/100.0)*dist);
-	}
-/*
-	// Brightness and Contrast
-	if(FILTER_BRIGHTNESSANDCONTRAST){
-		float brightness=-0.05;
-		float contrast=0.1;
-		color.rgb+=brightness;
-		color.rgb=(color.rgb-0.5)/(1.0-contrast)+0.5;
-	}
-*/
-	if(paused){
-		float average=(color.r+color.g+color.b)/3.0;
-		color.rgb+=(average - color.rgb);
-		color.rgb-=0.15;
 	}
 
 	gl_FragColor=color;

@@ -28,7 +28,7 @@
 				text-align: justify;
 				width: 770px;
 			}
-			div.text p a, div.text ul li a {
+			div.text p a, div.text ul li a, .hl {
 				color: #ff0000;
 			}
 
@@ -47,8 +47,9 @@
 				<h1>WebGL Doom</h1>
 				<p>...but not really, well at least not at the moment anyway. What we have here is
 					a WebGL renderer for displaying Doom Levels loaded directly from the Shareware
-					Wad file. This demo uses a <a href="http://glbsp.sourceforge.net/" target="_blank">GLBSP</a>
-					modified version of the original wad file can be downloaded from
+					Wad file. This demo uses a <a href="http://glbsp.sourceforge.net/"
+					target="_blank">GLBSP</a> modified version of the original wad file can be
+					downloaded from
 					<a href="ftp://ftp.idsoftware.com/idstuff/doom/" target="_blank">the official
 					id software ftp</a> to make it more WebGL/OpenGL friendly.</p>
 				<p>While Doom may not look very complicated by todays standards there are quite a
@@ -66,18 +67,26 @@
 					target="_blank">he3d</a> which we'll not go into, its not important to this
 					demo, it just hides a lot of the html5/webgl/javascript gumpf away.</p>
 
-				<h2>26th December 2012 Update:</h2>
-				<p>THINGS! (Doom's name for the 2d sprites you see on the map).
-					These are now rendering in their spawnstate. They also always face the camera,
-					which is correct but not the best way of drawing them. Ideally they would only
-					rotate on one axis, if you fly the camera above and look down you will notice
-					they are flat on the ground. This is the Mario64 way of billboarding.</p>					
+				<h2>4th Jan 2013 Update:</h2>
+				<p>Heightmaps! Crazy over the top heightmaps to be precise. <em>"Thats not the way
+					Doom did it!"</em>. I thought I'd try out rasterising the FLATS into a massive
+					array for a per-pixel based heightmap. There is a good chance this might
+					cripple or crash your browser, I've only really tested it on an i7 =P</p>
+				<p>As a result, the THINGS are in the right places now and in theory could move
+					around (when I get to that stage), in the mean time YOU can walk around in there
+					now, I've done some quick thrown together Doom style controls (yes disabled
+					looking up and down ;))</p>
+				<p>There is no friction for the walls or anything yet, so you will get stuck in
+					walls at some angles, hopefully you can back out of them if not, use the freecam
+					mode (F key) to fly out of there</p>
+				<p>I've seen Chrome crash a few times on the bigger maps (due to the size of the
+					heightmap it needs to transfer back) like E1M8 so ymmv on workyness</p>
 					
 				<h2>The Demo</h2>
 				<p>Yeah yeah yeah, enough with the technical nonsense, click on one of the links
 					below to have a play around with it. Bare in mind that most of the maps don't
 					render correctly and some may even cause errors and stop it from running but
-					its still pretty fun to fly around</p>
+					its still pretty fun to run around</p>
 				<ul>
 					<li><a href="doom.html#e1m1">E1M1 - Hanger</a></li>
 					<li><a href="doom.html#e1m2">E1M2 - Nuclear Plant</a></li>
@@ -100,14 +109,14 @@
 					move your view around.</p>
 				<p>Other than that its your basic WASD style control scheme, you can use the Q and E
 					keys to float up and down. Yeah yeah, Doom didn't have up and down, it didn't
-					even have looking up and down but for the sake of this demo and to save my sanity
-					while developing this, you can.</p>
+					even have looking up and down but for the sake of this demo and to save my
+					sanity while developing this, you can (in freecam mode).</p>
+				<p><span class="hl">**NEW**</span> By default you walk around the map now, use the
+					F key to toggle noclip / freecam mode (useful when you get stuck in a wall)</p>
 				<p>There are a few other buttons you can fiddle with too, if your GPU is halfway
 					decent you can try maximising the viewport using ALT+RETURN, then if you are
 					feeling really fruity, hit F11 for full screen browser mode.</p>
-				<p>You can also toggle some of the rendering settings using 1,2,3,4,5. It should be
-					fairly obvious what they do when you press them, the 'Things' are the positions
-					where monsters/barrels/2d objects would be (not quite got them working yet).</p>
+				<p>You can also toggle some of the rendering settings using 1,2,3,4,5.</p>
 
 				<h2>Disclaimer</h2>
 				<p>We can't be held responsible for the quality of the code in this demo, we wrote

@@ -7,6 +7,34 @@ wadLoader.wallLength=function(s,e){
 	return Math.sqrt(x*x+y*y);
 };
 
+wadLoader.getLightType=function(t){
+	switch(t){
+		// Random Blink
+		case 1:
+		case 17:
+			return 1.0;
+			break;
+		// Blink 0.5
+		case 2:
+		case 4:
+		case 12:
+			return 2.0;
+			break;
+		// Blink 1.0
+		case 3:
+		case 11:
+			return 3.0;
+			break;
+		// Oscillate
+		case 8:
+			return 4.0;
+			break;
+		// Full Light
+		default:
+			return 0.0;
+	}
+};
+
 //
 // Ideas-
 //	if the angle of the wall doesn't change and its the same texture,
@@ -86,7 +114,7 @@ wadLoader.addWall=function(data,map,front,back,start,end,flags){
 	data.ceiling=frontsec.ceiling*MAP_SCALE;
 	data.tex_c=frontsec.tex_c;
 	data.light=frontsec.lightlevel/255;
-	data.stype=frontsec.type+0.1;
+	data.stype=wadLoader.getLightType(frontsec.type);
 
 	if(back){
 		var backsec=map.sectors[back.sector];
@@ -313,32 +341,31 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 
 	// Get Thing Heights
 	wadLoader.findThingInSSector(map,(!side)?node.bb_r:node.bb_l,data.floor);
-//	wadLoader.updateHeightMap(map,(!side)?node.bb_r:node.bb_l,data.floor);
 
 	// World Bounding Box
 	if(!side){
-		if(isNaN(data.worldbb[0])||node.bb_r[0]<data.worldbb[0])
-			data.worldbb[0]=node.bb_r[0];
-		if(isNaN(data.worldbb[1])||node.bb_r[1]>data.worldbb[1])
-			data.worldbb[1]=node.bb_r[1];
-		if(isNaN(data.worldbb[2])||node.bb_r[2]<data.worldbb[2])
-			data.worldbb[2]=node.bb_r[2];
-		if(isNaN(data.worldbb[3])||node.bb_r[3]>data.worldbb[3])
-			data.worldbb[3]=node.bb_r[3];
+		if(this.wad.worldbb[0]==null||node.bb_r[0]<this.wad.worldbb[0])
+			this.wad.worldbb[0]=node.bb_r[0];
+		if(this.wad.worldbb[1]==null||node.bb_r[1]>this.wad.worldbb[1])
+			this.wad.worldbb[1]=node.bb_r[1];
+		if(this.wad.worldbb[2]==null||node.bb_r[2]<this.wad.worldbb[2])
+			this.wad.worldbb[2]=node.bb_r[2];
+		if(this.wad.worldbb[3]==null||node.bb_r[3]>this.wad.worldbb[3])
+			this.wad.worldbb[3]=node.bb_r[3];
 	}else{
-		if(isNaN(data.worldbb[0])||node.bb_l[0]<data.worldbb[0])
-			data.worldbb[0]=node.bb_l[0];
-		if(isNaN(data.worldbb[1])||node.bb_l[1]>data.worldbb[1])
-			data.worldbb[1]=node.bb_l[1];
-		if(isNaN(data.worldbb[2])||node.bb_l[2]<data.worldbb[2])
-			data.worldbb[2]=node.bb_l[2];
-		if(isNaN(data.worldbb[3])||node.bb_l[3]>data.worldbb[3])
-			data.worldbb[3]=node.bb_l[3];
+		if(this.wad.worldbb[0]==null||node.bb_l[0]<this.wad.worldbb[0])
+			this.wad.worldbb[0]=node.bb_l[0];
+		if(this.wad.worldbb[1]==null||node.bb_l[1]>this.wad.worldbb[1])
+			this.wad.worldbb[1]=node.bb_l[1];
+		if(this.wad.worldbb[2]==null||node.bb_l[2]<this.wad.worldbb[2])
+			this.wad.worldbb[2]=node.bb_l[2];
+		if(this.wad.worldbb[3]==null||node.bb_l[3]>this.wad.worldbb[3])
+			this.wad.worldbb[3]=node.bb_l[3];
 	}
-	if(data.floor<data.worldbb[4])
-		data.worldbb[4]=data.floor;
-	if(data.ceiling>data.worldbb[5])
-		data.worldbb[5]=data.ceiling;
+	if(data.floor<this.wad.worldbb[4])
+		this.wad.worldbb[4]=data.floor;
+	if(data.ceiling>this.wad.worldbb[5])
+		this.wad.worldbb[5]=data.ceiling;
 
 	// Floor
 	var sv=0;
@@ -381,6 +408,7 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 			);
 			data.flats.brightness.push(data.light,data.light,data.light);
 			data.flats.type.push(data.stype,data.stype,data.stype);
+			data.flats.cf.push('f','f','f','f','f','f','f','f','f');
 			first=false;
 			continue;
 			
@@ -418,6 +446,7 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 				);
 				data.flats.brightness.push(data.light,data.light,data.light);
 				data.flats.type.push(data.stype,data.stype,data.stype);
+				data.flats.cf.push('f','f','f','f','f','f','f','f','f');
 			} else {
 				sv=ev;
 				ev--;
@@ -451,6 +480,7 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 				);
 				data.flats.brightness.push(data.light,data.light,data.light);
 				data.flats.type.push(data.stype,data.stype,data.stype);
+				data.flats.cf.push('f','f','f','f','f','f','f','f','f');
 			}
 
 		}
@@ -497,6 +527,7 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 			);
 			data.flats.brightness.push(data.light,data.light,data.light);
 			data.flats.type.push(data.stype,data.stype,data.stype);
+			data.flats.cf.push('c','c','c','c','c','c','c','c','c');
 			first=false;
 			continue;
 			
@@ -534,6 +565,7 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 				);
 				data.flats.brightness.push(data.light,data.light,data.light);
 				data.flats.type.push(data.stype,data.stype,data.stype);
+				data.flats.cf.push('c','c','c','c','c','c','c','c','c');
 
 			} else {
 				sv=ev;
@@ -567,6 +599,7 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 				);
 				data.flats.brightness.push(data.light,data.light,data.light);
 				data.flats.type.push(data.stype,data.stype,data.stype);
+				data.flats.cf.push('c','c','c','c','c','c','c','c','c');
 			}
 		}
 
@@ -582,13 +615,169 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 	data.flattextures[data.tex_c].count++;
 };
 
+//
+// Height map generation ---------------------------------------------------------------------------
+//
+wadLoader.heightmapDrawSpan=function(s,e,y,height){
+	var xdiff=e-s;
+	if(xdiff==0)
+		return;
+
+	var f=0;
+	var fstep=1/xdiff;
+
+	// Set some pixels!
+	for(var x=s;x<e;x++){
+		this.wad.heightmap.data[x][y]=height;
+		f+=fstep;// interpolation, probably not needed unless doom has ramps =P
+		//	though more seriously, could ramp to the next height,
+		//	then if the difference is HUGE its probably a wall =o
+	}
+};
+wadLoader.heightmapDrawEdgeSpan=function(edge1,edge2,height){
+	var e1ydiff=edge1[3]-edge1[1];
+	if(e1ydiff==0)
+		return;
+	var e2ydiff=edge2[3]-edge2[1];
+	if(e2ydiff==0)
+		return;
+
+	var e1xdiff=edge1[2]-edge1[0];
+	var e2xdiff=edge2[2]-edge2[0];
+
+	// Calculate interpolation factors
+	var factor1=(edge2[1]-edge1[1])/e1ydiff;
+	var factorStep1=1/e1ydiff;
+	var factor2=0;
+	var factorStep2=1/e2ydiff;
+
+	// Loop through the lines between the edges and draw spans
+	var start,end;
+	for(var y=edge2[1];y<edge2[3];y++){
+		// Create span
+		start=edge1[0]+parseInt(e1xdiff*factor1);
+		end=edge2[0]+parseInt(e2xdiff*factor2);
+
+		if(start<end)
+			wadLoader.heightmapDrawSpan(start,end,y,height);
+		else
+			wadLoader.heightmapDrawSpan(end,start,y,height);
+
+		factor1+=factorStep1;
+		factor2+=factorStep2;
+	}
+};
+
+wadLoader.buildHeightmap=function(data){
+	he3d.log("DEBUG","World Bounding Box",this.wad.worldbb);
+
+	// Dimensions
+	this.wad.heightmap={
+		height:	Math.abs(this.wad.worldbb[0]-this.wad.worldbb[1]),
+		offx:	-this.wad.worldbb[2],
+		offy:	-this.wad.worldbb[0],
+		min:	0,
+		max:	0,
+		width:	Math.abs(this.wad.worldbb[2]-this.wad.worldbb[3])
+	};
+	
+	he3d.log("DEBUG","Heightmap Size",this.wad.heightmap.width+"x"+this.wad.heightmap.height+
+		" offsets["+this.wad.heightmap.offx+"x"+this.wad.heightmap.offy+"]");
+
+	// Build bitmap
+	this.wad.heightmap.data=new Array(this.wad.heightmap.width);
+	for(var w=0;w<this.wad.heightmap.width;w++){
+		this.wad.heightmap.data[w]=new Array(this.wad.heightmap.height);
+		for(var h=0;h<this.wad.heightmap.height;h++)
+			this.wad.heightmap.data[w][h]=-9999;
+	}
+
+	// Rasterise the flats into bitmap!
+	// http://joshbeam.com/articles/triangle_rasterization/
+	var edge=new Array(3);
+	var len=0,maxlen=0,height,minh=0,maxh=0;
+	var ledge=0,sedge1=0,sedge2=0;
+	for(var v=0;v<data.flats.verts.length;v+=9){
+		// Only read floors
+		if(data.flats.cf[v]=='c')
+			continue;
+
+		height=data.flats.verts[v+1];
+
+		if(height>maxh)maxh=height;
+		if(height<minh)minh=height;
+		
+		edge[0]=[
+			data.flats.verts[v]+this.wad.heightmap.offx,
+			data.flats.verts[v+2]+this.wad.heightmap.offy,
+			data.flats.verts[v+3]+this.wad.heightmap.offx,
+			data.flats.verts[v+5]+this.wad.heightmap.offy];
+		if(edge[0][1]>edge[0][3])
+			edge[0]=[
+				data.flats.verts[v+3]+this.wad.heightmap.offx,
+				data.flats.verts[v+5]+this.wad.heightmap.offy,
+				data.flats.verts[v]+this.wad.heightmap.offx,
+				data.flats.verts[v+2]+this.wad.heightmap.offy];
+				
+		edge[1]=[
+			data.flats.verts[v+3]+this.wad.heightmap.offx,
+			data.flats.verts[v+5]+this.wad.heightmap.offy,
+			data.flats.verts[v+6]+this.wad.heightmap.offx,
+			data.flats.verts[v+8]+this.wad.heightmap.offy];
+		if(edge[1][1]>edge[1][3])
+			edge[1]=[
+				data.flats.verts[v+6]+this.wad.heightmap.offx,
+				data.flats.verts[v+8]+this.wad.heightmap.offy,
+				data.flats.verts[v+3]+this.wad.heightmap.offx,
+				data.flats.verts[v+5]+this.wad.heightmap.offy];
+	
+		edge[2]=[
+			data.flats.verts[v+6]+this.wad.heightmap.offx,
+			data.flats.verts[v+8]+this.wad.heightmap.offy,
+			data.flats.verts[v]+this.wad.heightmap.offx,
+			data.flats.verts[v+2]+this.wad.heightmap.offy];
+		if(edge[2][1]>edge[2][3])
+			edge[2]=[
+				data.flats.verts[v]+this.wad.heightmap.offx,
+				data.flats.verts[v+2]+this.wad.heightmap.offy,
+				data.flats.verts[v+6]+this.wad.heightmap.offx,
+				data.flats.verts[v+8]+this.wad.heightmap.offy];
+
+		// Find longest edge
+		maxlen=0;
+		for(var e=0;e<3;e++){
+			len=Math.abs(edge[e][3]-edge[e][1]);
+			if(len>maxlen){
+				maxlen=len;
+				ledge=e;
+			}
+        }
+		sedge1=(ledge+1)%3;
+        sedge2=(ledge+2)%3;
+
+        wadLoader.heightmapDrawEdgeSpan(edge[ledge],edge[sedge1],height);
+        wadLoader.heightmapDrawEdgeSpan(edge[ledge],edge[sedge2],height);
+	}
+	this.wad.heightmap.min=minh;
+	this.wad.heightmap.max=maxh;
+
+	// Flatten array
+	var data=new Int16Array(this.wad.heightmap.width*this.wad.heightmap.height);
+	var ai=0;
+	for(var h=0;h<this.wad.heightmap.height;h++)
+		for(var w=0;w<this.wad.heightmap.width;w++)
+			data[ai++]=this.wad.heightmap.data[w][h];
+	this.wad.heightmap.data=data;
+};
+
 wadLoader.buildLevel=function(level){
 	he3d.log("DEBUG","Level Vertexes: ",
 		this.wad.levels[level].vertexes.length+this.wad.levels[level].glverts.length);
 	var map=this.wad.levels[level];
 
+	this.wad.worldbb=[null,null,null,null,0,0];
+
 	var data={
-		worldbb:[null,null,null,null,0,0],
 		verts:[],
 		indices:[],
 		colours:[],
@@ -600,6 +789,7 @@ wadLoader.buildLevel=function(level){
 			brightness:[],
 			type:[],
 			indices:[],
+			cf:[],
 			i:0
 		},
 		flattextures:[],
@@ -625,7 +815,7 @@ wadLoader.buildLevel=function(level){
 		if(map.things[t].type==1){
 			this.wad.spawnPos=[
 				-map.things[t].x*MAP_SCALE,
-				((map.things[t].y*MAP_SCALE)+40),
+				((map.things[t].y*MAP_SCALE)+PLAYER_HEIGHT),
 				-map.things[t].z*MAP_SCALE
 			];
 			this.wad.spawnDir=map.things[t].angle-90;
@@ -634,8 +824,8 @@ wadLoader.buildLevel=function(level){
 		}
 	}
 
-	this.wad.worldbb=data.worldbb;
-	he3d.log("DEBUG","World Bounding Box",this.wad.worldbb);
+	// Build Heightmap
+	wadLoader.buildHeightmap(data);
 
 	he3d.log("DEBUG","Building Textures"," ");
 	wadLoader.buildWallTextures(data);

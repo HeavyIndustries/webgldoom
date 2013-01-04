@@ -170,13 +170,14 @@ wadLoader.parse=function(filename,level,data){
 		'Transfering Data back from Worker Thread');
 
 	postMessage({
-		'filename':		filename,
-		'mapdata':		this.wad.mapdata,
+		'atlus':		this.wad.atlus,
 		'indices':		this.wad.indices,
+		'filename':		filename,
 		'flatdata':		this.wad.flatdata,
 		'flatindices':	this.wad.flatindices,
-		'atlus':		this.wad.atlus,
 		'flatlus':		this.wad.flatlus,
+		'heightmap':	this.wad.heightmap,
+		'mapdata':		this.wad.mapdata,
 		'sky':			this.wad.sky,
 		'spawnPos':		this.wad.spawnPos,
 		'spawnDir':		this.wad.spawnDir,

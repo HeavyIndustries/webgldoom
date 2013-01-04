@@ -7,7 +7,7 @@ he3d.game={
 		vbo:	{}
 	},
 	lights:{
-		timers:	[1.0,1.0,1.0,1.0],
+		timers:	[1.0,1.0,1.0,1.0,1.0],
 		oscillatedir:false,
 		blink:	0,
 		halfblink:0
@@ -25,6 +25,9 @@ he3d.game={
 	},
 	name:		"WebGL Doom",
 	path:		"../webgldoom/",
+	player:{
+		freecam:	false
+	},
 	sky:		{show:true,vbo:{}},
 	splash:		{show:true,vbo:{},loaded:false},
 	things:		{
@@ -78,12 +81,14 @@ he3d.game.map.progress=function(e){
 		this.map.titlescreen.width=e.data.titlescreen.width;
 		return;
 	}
+	
+	this.map.atlus=e.data.atlus;
 	this.map.data=e.data.mapdata;
 	this.map.indices=e.data.indices;
 	this.map.flatdata=e.data.flatdata;
 	this.map.flatindices=e.data.flatindices;
-	this.map.atlus=e.data.atlus;
 	this.map.flatlus=e.data.flatlus;
+	this.map.heightmap=e.data.heightmap;
 	this.map.sky=e.data.sky;
 	this.map.spawnPos=e.data.spawnPos;
 	this.map.spawnDir=e.data.spawnDir;
@@ -91,6 +96,7 @@ he3d.game.map.progress=function(e){
 	this.map.things=e.data.things;
 	this.map.thingsatlus=e.data.thingsatlus;
 	this.map.worldbb=e.data.worldbb;
+
 	this.map.loaded=true;
 };
 
@@ -226,6 +232,35 @@ he3d.game.waitAssets=function(){
 		width:	he3d.game.map.thingsatlus.width
 	});
 
+	// View heightmap
+	/*
+	var rawimage=new Uint8Array((he3d.game.map.heightmap.width*he3d.game.map.heightmap.height)*3);
+	var ai=0,di=0;
+	var scale=(he3d.game.map.heightmap.max-he3d.game.map.heightmap.min);
+	for(var di=0;di<he3d.game.map.heightmap.data.length;di++){
+		if(he3d.game.map.heightmap.data[di]==-9999){
+			rawimage[ai++]=0;
+			rawimage[ai++]=255;
+			rawimage[ai++]=0;
+			continue;
+		}
+		rawimage[ai++]=
+			(he3d.game.map.heightmap.data[di]-he3d.game.map.heightmap.min)/(scale)*255;
+		rawimage[ai++]=0;
+		rawimage[ai++]=0;
+	}	
+	he3d.t.load({
+		name: 	'heightmap',
+		type:	'raw',
+		format:	'rgb',
+		flip:	true,
+		filter:	{min:he3d.gl.NEAREST,mag:he3d.gl.NEAREST},
+		image:	rawimage,
+		height:	he3d.game.map.heightmap.height,
+		width:	he3d.game.map.heightmap.width
+	});
+	*/
+	
 	he3d.game.sky.vbo=he3d.primatives.bbox({
 		insideout:true,
 		z:{min:0,max:he3d.game.map.sky.width},
@@ -327,6 +362,8 @@ he3d.game.main=function(){
 		he3d.i.keys[he3d.e.keys._5]=false;
 	}
 
+	he3d.game.player.update();
+
 	if(he3d.game.things.show)
 		he3d.game.things.update();
 
@@ -340,7 +377,7 @@ he3d.game.main=function(){
 	he3d.r.renderables[he3d.r.rCount++]={func:he3d.game.things.draw};
 
 	// Update Camera View
-	he3d.game.camera.readInput().update().view().updatePerspective();
+	he3d.game.camera.update().view().updatePerspective();
 };
 
 he3d.game.postProcessingVariables=function(){
@@ -348,43 +385,123 @@ he3d.game.postProcessingVariables=function(){
 };
 
 //
+// Player ------------------------------------------------------------------------------------------
+//
+he3d.game.player.update=function(){
+	if(he3d.i.keys[he3d.e.keys.F]){
+		this.freecam=!this.freecam;
+		he3d.i.keys[he3d.e.keys.F]=false;
+	}
+
+	var cam=he3d.game.camera;
+	cam.mod=1;
+	if(he3d.i.keys[he3d.e.keys.SHIFT]){
+		if(!this.freecam)
+			cam.mod=0.5;	// Run!
+		else
+			cam.mod=2.5;	// Walk!
+	}
+
+	if(he3d.i.mouse.wheel>0)cam.setfov(cam.fov-5);
+	if(he3d.i.mouse.wheel<0)cam.setfov(cam.fov+5);
+	
+	if(he3d.i.keys[he3d.e.keys.W])cam.delta[2]= (cam.accel/cam.mod)*he3d.timer.delta;
+	if(he3d.i.keys[he3d.e.keys.S])cam.delta[2]=-(cam.accel/cam.mod)*he3d.timer.delta;
+	if(he3d.i.keys[he3d.e.keys.A])cam.delta[0]= (cam.accel/cam.mod)*he3d.timer.delta;
+	if(he3d.i.keys[he3d.e.keys.D])cam.delta[0]=-(cam.accel/cam.mod)*he3d.timer.delta;
+
+	if(he3d.i.keys[he3d.e.keys.LEFT_ARROW])cam.angle[1]+=
+		(cam.k_turnspeed/cam.mod)*he3d.timer.delta;
+	if(he3d.i.keys[he3d.e.keys.RIGHT_ARROW])cam.angle[1]-=
+		(cam.k_turnspeed/cam.mod)*he3d.timer.delta;
+
+	if(he3d.i.pointerLocked||he3d.i.mouse.buttons[he3d.e.mouse.middle]){
+		cam.angle[1]-=(cam.m_turnspeed*he3d.i.mouse.delta[0])*he3d.timer.delta;
+		if(!this.freecam)
+			cam.delta[2]-=(cam.m_turnspeed*he3d.i.mouse.delta[1])*he3d.timer.delta;
+	}
+
+	if(this.freecam){
+		if(he3d.i.pointerLocked||he3d.i.mouse.buttons[he3d.e.mouse.middle])
+			cam.angle[0]-=(cam.m_turnspeed*he3d.i.mouse.delta[1])*he3d.timer.delta;
+		
+		if(he3d.i.keys[he3d.e.keys.E])cam.delta[1]= (cam.accel/cam.mod)*he3d.timer.delta;
+		if(he3d.i.keys[he3d.e.keys.Q])cam.delta[1]=-(cam.accel/cam.mod)*he3d.timer.delta;
+
+		if(he3d.i.keys[he3d.e.keys.DOWN_ARROW])cam.angle[0]+=
+			(cam.k_turnspeed/cam.mod)*he3d.timer.delta;
+		if(he3d.i.keys[he3d.e.keys.UP_ARROW])cam.angle[0]-=
+			(cam.k_turnspeed/cam.mod)*he3d.timer.delta;
+		return;
+	}
+
+	//
+	// Walking Mode ------------
+	//
+	cam.angle[0]=0;	// No lookup/down ;)
+	
+	var hm=he3d.game.map.heightmap;
+	var newpos=[
+		cam.pos[0]+cam.delta[0],
+		cam.pos[1]+cam.delta[1],
+		cam.pos[2]+cam.delta[2]
+	];
+	var groundheight=hm.data[((Math.floor(-newpos[2])+hm.offy)*hm.width)+
+		(Math.floor(-newpos[0])+hm.offx)];
+	if(groundheight==-9999){
+		cam.delta[0]=0;
+		cam.delta[1]=0;
+		cam.delta[2]=0;
+	} else {
+		he3d.game.camera.pos[1]=-(groundheight+PLAYER_HEIGHT);
+	}
+};
+
+//
 // Lights ------------------------------------------------------------------------------------------
 //
+
+//
+// This should be a uniform array, not a vec4.
+// timer 0 should be 1.0 so that the ltypes line up.
+// ltypes should be fixed to 0-5, not what they are in the wad.
+//
+
 he3d.game.lights.update=function(){
 	var time=Date.now();
 	// Blink Random
 	if(time-he3d.game.lights.randomblink>=25&&Math.random()){
-		if(he3d.game.lights.timers[0]==1.0)
-			he3d.game.lights.timers[0]=0.0;
+		if(he3d.game.lights.timers[1]==1.0)
+			he3d.game.lights.timers[1]=0.0;
 		else
-			he3d.game.lights.timers[0]=1.0;
+			he3d.game.lights.timers[1]=1.0;
 		he3d.game.lights.randomblink=time;
 	}
 
 	// Blink 0.5
 	if(time-he3d.game.lights.halfblink>=500){
-		if(he3d.game.lights.timers[1]==1.0)
-			he3d.game.lights.timers[1]=0.25;
+		if(he3d.game.lights.timers[2]==1.0)
+			he3d.game.lights.timers[2]=0.25;
 		else
-			he3d.game.lights.timers[1]=1.0;
+			he3d.game.lights.timers[2]=1.0;
 		he3d.game.lights.halfblink=time;
 	}
 	
 	// Blink 1.0
 	if(time-he3d.game.lights.blink>=1000){
-		if(he3d.game.lights.timers[2]==1.0)
-			he3d.game.lights.timers[2]=0.25;
+		if(he3d.game.lights.timers[3]==1.0)
+			he3d.game.lights.timers[3]=0.25;
 		else
-			he3d.game.lights.timers[2]=1.0;
+			he3d.game.lights.timers[3]=1.0;
 		he3d.game.lights.blink=time;
 	}
 	
 	// Oscillating Light Timer
 	if(he3d.game.lights.oscillatedir)
-		he3d.game.lights.timers[3]+=0.0175;
+		he3d.game.lights.timers[4]+=0.0175;
 	else
-		he3d.game.lights.timers[3]-=0.0175;
-	if(he3d.game.lights.timers[3]>1.0||he3d.game.lights.timers[3]<0.25)
+		he3d.game.lights.timers[4]-=0.0175;
+	if(he3d.game.lights.timers[4]>1.0||he3d.game.lights.timers[4]<0.25)
 		he3d.game.lights.oscillatedir=!he3d.game.lights.oscillatedir;
 
 };
@@ -417,7 +534,7 @@ he3d.game.flats.draw=function(){
 		1,he3d.gl.FLOAT,false,28,24);
 
 	he3d.gl.uniform1i(he3d.r.curProgram.uniforms['texture'],he3d.game.flats.vbo.texture);
-	he3d.gl.uniform4fv(he3d.r.curProgram.uniforms['lighttimers'],he3d.game.lights.timers);
+	he3d.gl.uniform1fv(he3d.r.curProgram.uniforms['lighttimers'],he3d.game.lights.timers);
 
 	// Position in World
 	he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uPMatrix'],false,he3d.r.pMatrix);
@@ -463,7 +580,7 @@ he3d.game.walls.draw=function(){
 		1,he3d.gl.FLOAT,false,28,24);
 
 	he3d.gl.uniform1i(he3d.r.curProgram.uniforms['texture'],he3d.game.walls.vbo.texture);
-	he3d.gl.uniform4fv(he3d.r.curProgram.uniforms['lighttimers'],he3d.game.lights.timers);
+	he3d.gl.uniform1fv(he3d.r.curProgram.uniforms['lighttimers'],he3d.game.lights.timers);
 	
 	// Position in World
 	he3d.gl.uniformMatrix4fv(he3d.r.curProgram.uniforms['uPMatrix'],false,he3d.r.pMatrix);
@@ -635,6 +752,9 @@ he3d.game.things.getSpriteName=function(state){
 
 he3d.game.things.update=function(){
 	var thing;
+	var offx=he3d.game.map.heightmap.offx;
+	var offy=he3d.game.map.heightmap.offy;
+	var hmw=he3d.game.map.heightmap.width;
 	for(var t=0;t<he3d.game.map.things.length;t++){
 		thing=he3d.game.map.things[t];
 		if(thing.curstate==statenum_t.S_NULL||!state_t[thing.curstate])
@@ -651,6 +771,10 @@ he3d.game.things.update=function(){
 		// Get spritename
 		if(!thing.sprite)
 			thing.sprite=he3d.game.things.getSpriteName(thing.curstate);
+
+		// Get Sector Height
+		if(thing.sprite)
+			thing.y=he3d.game.map.heightmap.data[((thing.z+offy)*hmw)+(thing.x+offx)];
 	}
 };
 
@@ -659,12 +783,14 @@ he3d.game.things.update=function(){
 //
 he3d.game.hud=function(){
 	this.ctx.setTransform(1,0,0,1,0,0);
-	this.ctx.translate(10,he3d.hud.size[1]-70);
-	this.ctx.fillText("Fullscreen - alt+return / Click to enable Mouse Support",0,0);
+	this.ctx.translate(10,he3d.hud.size[1]-80);
+	this.ctx.fillText("Fullviewport - alt+return / Click to enable Mouse Support",0,0);
 	this.ctx.translate(0,10);
 	this.ctx.fillText("W/A/S/D/Q/E - Move Camera",0,0);
 	this.ctx.translate(0,10);
 	this.ctx.fillText("Cursor Keys - Look",0,0);
+	this.ctx.translate(0,10);
+	this.ctx.fillText("Toggle FreeCam (noclip) - F",0,0);
 	this.ctx.translate(0,10);
 	this.ctx.fillText("Toggle Walls - 1 / Flats - 2 / Sky - 3 / Lines - 4 / Things - 5",0,0);
 	this.ctx.translate(0,10);
