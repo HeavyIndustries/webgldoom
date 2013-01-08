@@ -35,6 +35,7 @@ const ANIM_FPS=35.0;
 const FF_FRAMEMASK=0x7fff;
 const FF_FULLBRIGHT=0x8000;
 const PLAYER_HEIGHT=40;
+const NOGROUND=-9999;
 
 // Model type ID
 var mobjtype_t={

@@ -689,7 +689,7 @@ wadLoader.buildHeightmap=function(data){
 	for(var w=0;w<this.wad.heightmap.width;w++){
 		this.wad.heightmap.data[w]=new Array(this.wad.heightmap.height);
 		for(var h=0;h<this.wad.heightmap.height;h++)
-			this.wad.heightmap.data[w][h]=-9999;
+			this.wad.heightmap.data[w][h]=NOGROUND;
 	}
 
 	// Rasterise the flats into bitmap!

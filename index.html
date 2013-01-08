@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>WebGL Doom</title>
+		<title>WebGL Doom - This is not a Doom port, this is just a tribute =P</title>
 		<link id="favicon" rel="shortcut icon" type="image/png" href="../he3d/favicon.png">
 		<style>
 			body {
@@ -36,6 +36,8 @@
 				color: #FF0000;
 				font-size: 16pt;
 			}
+
+			h2.update { cursor: pointer; }
 		</style>
 	</head>
 	<body>
@@ -67,21 +69,52 @@
 					target="_blank">he3d</a> which we'll not go into, its not important to this
 					demo, it just hides a lot of the html5/webgl/javascript gumpf away.</p>
 
-				<h2>4th Jan 2013 Update:</h2>
-				<p>Heightmaps! Crazy over the top heightmaps to be precise. <em>"Thats not the way
-					Doom did it!"</em>. I thought I'd try out rasterising the FLATS into a massive
-					array for a per-pixel based heightmap. There is a good chance this might
-					cripple or crash your browser, I've only really tested it on an i7 =P</p>
-				<p>As a result, the THINGS are in the right places now and in theory could move
-					around (when I get to that stage), in the mean time YOU can walk around in there
-					now, I've done some quick thrown together Doom style controls (yes disabled
-					looking up and down ;))</p>
-				<p>There is no friction for the walls or anything yet, so you will get stuck in
-					walls at some angles, hopefully you can back out of them if not, use the freecam
-					mode (F key) to fly out of there</p>
-				<p>I've seen Chrome crash a few times on the bigger maps (due to the size of the
-					heightmap it needs to transfer back) like E1M8 so ymmv on workyness</p>
-					
+				<h2 class="update" onclick="toggle(this,'130108')">- 8th Jan 2013 Update:</h2>
+				<div id="130108">
+					<p>Heightmaps should transfer a bit better now as it doesn't try to upload
+						the map as a texture (this was crashing Chrome on E1M8).</p>
+					<p>Added some better collision detection against the heightmap, its still very
+						wrong but at least you shouldn't fall through the world too much now. Also
+						moved the players position and movement code into it's own thing instead of
+						using the camera. We now have fake gravity and mouse movement.</p>
+					<p>Added some visual lines to see which THINGS are being considered for what
+						will be collision testing later on. (Press 6 to toggle).</p>
+				</div>
+				
+				<h2 class="update" onclick="toggle(this,'130104')">+ 4th Jan 2013 Update</h2>
+				<div id="130104" style="display:none;">
+					<p>Heightmaps! Crazy over the top heightmaps to be precise. <em>"Thats not the
+						way	Doom did it!"</em>. I thought I'd try out rasterising the FLATS into a
+						massive	array for a per-pixel based heightmap. There is a good chance this
+						might cripple or crash your browser, I've only really tested it on
+						an i7 =P</p>
+					<p>As a result, the THINGS are in the right places now and in theory could move
+						around (when I get to that stage), in the mean time YOU can walk around in
+						there now, I've done some quick thrown together Doom style controls (yes
+						disabled looking up and down ;))</p>
+					<p>There is no friction for the walls or anything yet, so you will get stuck in
+						walls at some angles, hopefully you can back out of them if not, use the
+						freecam	mode (F key) to fly out of there</p>
+					<p>I've seen Chrome crash a few times on the bigger maps (due to the size of the
+						heightmap it needs to transfer back) like E1M8 so ymmv on workyness</p>
+				</div>
+				
+				<h2 class="update" onclick="toggle(this,'121226')">+ 26th Dec 2012 Update</h2>
+				<div id="121226" style="display:none;">
+					<p>THINGS! are now rendering animated in their spawnstate.</p>
+				</div>
+				
+				<h2 class="update" onclick="toggle(this,'121224')">+ 24th Dec 2012 Update</h2>
+				<div id="121224" style="display:none;">
+					<p>THINGS! (Doom's name for the 2d sprites you see on the map).
+						These are now rendering in their spawnstate and don't animate or move yet,
+						that will probably be the next stage. They also always face the camera,
+						which is correct but not the best way of drawing them. Ideally they would
+						only rotate on one axis, if you fly the camera above and look down you will
+						notice they are	flat on the ground. This is the Mario64 way of
+						billboarding.</p>
+				</div>
+				
 				<h2>The Demo</h2>
 				<p>Yeah yeah yeah, enough with the technical nonsense, click on one of the links
 					below to have a play around with it. Bare in mind that most of the maps don't
@@ -139,5 +172,18 @@
 			</div>
 		</div>
 		<script src="http://cdn.webglstats.com/stat.js" defer="defer" async="async"></script>
+		<script type="text/javascript"
+			src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+		<script>
+			function toggle (tag,t){
+				if ($('#'+t).is(":hidden")){
+					$(tag).text("- "+$(tag).text().substring(2)+":");
+					$('#'+t).slideDown('fast');
+				}else{
+					$(tag).text("+ "+$(tag).text().substring(2,$(tag).text().length-1));
+					$('#'+t).slideUp('fast');
+				};
+			};
+		</script>
 	</body>
 </html>
