@@ -2,19 +2,6 @@
 // Things Parsing ----------------------------------------------------------------------------------
 //
 
-// Atluses
-//	Maybe have two? one for basic non-state/framed things
-//	and one for animated things. This would require
-// 	either drawing all single frame things THEN all
-//	multiframe ones or binding both textures and
-//	switching between them in the shader.
-//
-//	What else is different between the two types
-//	of thing? maybe there should be two sperate routines
-//
-//	Some things glow with a light pulse effect
-//
-
 //
 // XXX This is crazy loopy for deduping, must be a way to reduce it
 //
@@ -24,14 +11,17 @@ wadLoader.buildThings=function(level){
 	for(var t in this.wad.levels[level].things){
 		this.wad.levels[level].things[t].curstate=statenum_t.S_NULL;
 		this.wad.levels[level].things[t].tic=0;
-		
+		this.wad.levels[level].things[t].sector=-1;
+
 		if((uT=wadLoader.LookupThing(this.wad.levels[level].things[t].type))!=null){
 			this.wad.levels[level].things[t].curstate=THINGS[uT].spawnstate;
+			this.wad.levels[level].things[t].health=THINGS[uT].spawnhealth;
+			this.wad.levels[level].things[t].basething=THINGS[uT];
 			
 			// Clone Thing Structure
 			for(var a in THINGS[uT])
 				this.wad.levels[level].things[t][a]=THINGS[uT][a];
-				
+
 			dupe=false;
 			for(var uTs=0;uTs<uThings.length;uTs++)
 				if(uT==uThings[uTs])

@@ -36,6 +36,7 @@ const FF_FRAMEMASK=0x7fff;
 const FF_FULLBRIGHT=0x8000;
 const PLAYER_HEIGHT=40;
 const NOGROUND=-9999;
+const ANGLE_MASK=0xFFFFFFFF;
 
 // Model type ID
 var mobjtype_t={
@@ -183,7 +184,7 @@ var mobjflag_t={
     MF_SOLID		: 2,
     MF_SHOOTABLE	: 4,
     MF_NOSECTOR		: 8,
-    MF_NOBLOCKMAP	: 16,                    
+    MF_NOBLOCKMAP	: 16,
     MF_AMBUSH		: 32,
     MF_JUSTHIT		: 64,
     MF_JUSTATTACKED	: 128,
@@ -195,7 +196,7 @@ var mobjflag_t={
     MF_SLIDE		: 0x2000,
     MF_FLOAT		: 0x4000,
     MF_TELEPORT		: 0x8000,
-    MF_MISSILE		: 0x10000,	
+    MF_MISSILE		: 0x10000,
     MF_DROPPED		: 0x20000,
     MF_SHADOW		: 0x40000,
     MF_NOBLOOD		: 0x80000,
@@ -338,6 +339,8 @@ var spritenames=[
     "COL5","TBLU","TGRN","TRED","SMBT","SMGT","SMRT","HDB1","HDB2","HDB3",
     "HDB4","HDB5","HDB6","POB1","POB2","BRS1","TLMP","TLP2"
 ];
+
+var animatedflats=["NUKAGE","FWATER","SWATER","LAVA","BLOOD","RROCK","SLIME"];
 
 // Sprites
 var spritenum_t={
@@ -501,7 +504,7 @@ var statenum_t={
 	S_PISTOL3:			15,
 	S_PISTOL4:			16,
 	S_PISTOLFLASH:		17,
-	S_SGUN:				18,	
+	S_SGUN:				18,
 	S_SGUNDOWN:			19,
 	S_SGUNUP:			20,
 	S_SGUN1:			21,
@@ -6001,3 +6004,4 @@ THINGS[mobjtype_t.MT_MISC86]={
 	flags:			mobjflag_t.MF_NOBLOCKMAP,
 	raisestate:		statenum_t.S_NULL
 };
+

@@ -1,4 +1,4 @@
-precision mediump float;
+precision highp float;
 
 uniform samplerCube texture;
 varying vec3 vNormal;

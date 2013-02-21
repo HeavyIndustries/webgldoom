@@ -1,12 +1,15 @@
-precision mediump float;
+precision highp float;
 
 uniform sampler2D texture;
 uniform int lines;
+uniform int hlSector;
 
 varying vec3 vPos;
 varying vec2 vTexId;
+varying float vFrame;
 varying float vLight;
 varying float vType;
+varying float vSector;
 
 vec4 fog (vec4 fragmentColor){
 	float depth=gl_FragCoord.z/gl_FragCoord.w;
@@ -23,6 +26,7 @@ void main (void){
 	vec2 tSize=vec2(512.0,512.0);
 	vec2 fSize=vec2(64.0,64.0);
 	vec2 toff=tSize/fSize;
+	// s = horiz / t = vert tile
 	vec2 tile=vec2(floor(vTexId.s),floor(vTexId.t));
 	
 	if(lines==1){
@@ -35,6 +39,15 @@ void main (void){
 		(vPos.z/fSize.y)-floor(vPos.z/fSize.y)
 	);
 
+	// Animated Flat
+	if(floor(vFrame)>0.0){
+		tile.x-=floor(vFrame);
+		if(tile.x<0.0){
+			tile.x+=7.0;
+			tile.y-=1.0;
+		}
+	}
+
 	fPos/=toff;
 	
 	// Tile id
@@ -46,6 +59,9 @@ void main (void){
 	fPos.y+=(1.0/tSize.y)+(tile.y*(1.0/tSize.y));
 
 	vec4 color=texture2D(texture,fPos);
+
+	if(hlSector>-1&&float(hlSector)==floor(vSector))
+		color.rgb+=vec3(0.8,0.8,0.0);
 	
 	gl_FragColor=fog(vec4(vLight*color.rgb,color.a));
 }

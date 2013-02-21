@@ -1,11 +1,13 @@
-precision mediump float;
+precision highp float;
 
 uniform sampler2D texture;
 uniform int lines;
+uniform int hlSector;
 
 varying vec2 vTexCoord;
 varying float vLight;
 varying float vType;
+varying float vSector;
 
 vec4 fog (vec4 fragmentColor){
 	float depth=gl_FragCoord.z/gl_FragCoord.w;
@@ -22,10 +24,12 @@ void main (void){
 		gl_FragColor=vec4(1.0,0.0,0.0,1.0);
 		return;
 	}
-
 	vec4 color=texture2D(texture,vTexCoord.st);
 	if(color.a<0.1)
 		discard;
+
+	if(hlSector>-1&&float(hlSector)==floor(vSector))
+		color.rgb+=vec3(0.8,0.8,0.0);
 
 	gl_FragColor=fog(vec4(vLight*color.rgb,color.a));
 }

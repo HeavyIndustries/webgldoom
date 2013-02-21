@@ -6,10 +6,12 @@ wadLoader={};
 importScripts('../../he3d/scripts/he3d_tools.js');
 importScripts('../../he3d/scripts/lib/jdataview.js');
 
+importScripts('defines.js');
+importScripts('common.js');
+importScripts('wadLoader_audio.js');
 importScripts('wadLoader_level.js');
 importScripts('wadLoader_textures.js');
 importScripts('wadLoader_things.js');
-importScripts('defines.js');
 
 he3d.log=function(){
 	switch(arguments.length){
@@ -52,7 +54,7 @@ wadLoader.getFile=function(e){
 
 	var fileType=file.split('.');
 	mxhr.responseType="arraybuffer";
-		
+
 	mxhr.addEventListener('error',function(){
 		he3d.log('FATAL','Failed to retrieve Map:',file);
 	},false);
@@ -102,18 +104,23 @@ wadLoader.getDirectory=function(){
 			data:	[]
 		});
 	}
-	
+
 	if(wadLoader.debug)
 		he3d.log("NOTICE","Got Directory: "+this.wad.directory.length+" Entries");
 	if(this.wad.directory[this.wad.directory.length-1].name!="F_END")
 		throw "Unexpected end of Directory Marker: "+
 			JSON.stringify(this.wad.directory[this.wad.directory.length-1]);
 };
-wadLoader.getLevels=function(){
-	var l,curl;
+wadLoader.getLevel=function(level){
+	var l,curl,gotlevel=false;
 	this.wad.levels=[];
 	for(l=0;l<this.wad.directory.length;l++){
 		if(this.wad.directory[l].name.match(/^(e\dm\d)/i)){
+			if(this.wad.directory[l].name==level)
+				gotlevel=true;
+			else if(gotlevel)
+				return; // Got all current level data
+				
 			if(wadLoader.debug)
 				he3d.log("NOTICE","Found Level at Lump["+l+"]: "+this.wad.directory[l].name);
 			curl=this.wad.directory[l].name;
@@ -154,36 +161,51 @@ wadLoader.parse=function(filename,level,data){
 	this.getHeader();
 	this.getDirectory();
 	this.getColorMaps();
-	
+
 	// Grab and return the Title Screen straight away
 	postMessage({titlescreen:this.getPatch('TITLEPIC')});
 
-	this.getLevels();
+	this.buildHUDTextures();
+	this.buildFpWeaponsTextures();
+	this.getLevel(level);
 	this.getPatches();
 	this.getWallTextures();
 	this.getFlatTextures();
+	this.getAudioFiles();	
 
 	this.buildLevel(level);
 	this.buildThings(level);
+	
+	//sectors only give half the story so this builds the second half
+	this.buildSubsectors(level);
 
 	he3d.log("NOTICE",'Finished Parsing '+filename,
 		'Transfering Data back from Worker Thread');
 
 	postMessage({
-		'atlus':		this.wad.atlus,
+		'atlas':		this.wad.atlas,
+		'audio':		this.wad.audio,
+		'bsplines':		this.wad.bsplinesdata,
+		'bsplinesindices':this.wad.bsplinesindices,
 		'indices':		this.wad.indices,
 		'filename':		filename,
 		'flatdata':		this.wad.flatdata,
 		'flatindices':	this.wad.flatindices,
-		'flatlus':		this.wad.flatlus,
-		'heightmap':	this.wad.heightmap,
+		'flatlas':		this.wad.flatlas,
+		'fpw':			this.wad.fpw,
+		'fpwatlas':		this.wad.fpwatlas,
+		'hud':			this.wad.hud,
+		'hudatlas':		this.wad.hudatlas,
 		'mapdata':		this.wad.mapdata,
+		'nodes':		this.wad.nodes,
+		'sectors':		this.wad.sectors,
 		'sky':			this.wad.sky,
 		'spawnPos':		this.wad.spawnPos,
 		'spawnDir':		this.wad.spawnDir,
 		'sprites':		this.wad.sprites,
+		'test':			this.wad.levels[level].test,
 		'things':		this.wad.levels[level].things,
-		'thingsatlus':	this.wad.thingsatlus,
+		'thingsatlas':	this.wad.thingsatlas,
 		'worldbb':		this.wad.worldbb
 	});
 };
@@ -235,6 +257,7 @@ wadLoader.getLinedefs=function(level,lump){
 			automap_hide:	(flags&(1<<7)?1:0),
 			automap_always:	(flags&(1<<8)?1:0)
 		};
+		ldef.sides=[ldef.right,ldef.left];
 		this.wad.levels[level].linedefs.push(ldef);
 	}
 	if(wadLoader.debug)
@@ -245,13 +268,16 @@ wadLoader.getNodes=function(level,lump){
 	this.view.seek(this.wad.directory[lump].filepos);
 	var len=this.wad.directory[lump].filepos+this.wad.directory[lump].size;
 	while(this.view.tell()<len){
+
 		this.wad.levels[level].nodes.push({
-			x:		this.view.getUint16(),
-			y:		this.view.getUint16(),
-			ex:		this.view.getUint16(),
-			ey:		this.view.getUint16(),
-			bb_r:	this.view.getUint32(),
-			bb_l:	this.view.getUint32(),
+			x:		this.view.getInt16(),
+			y:		-this.view.getInt16(),
+			dx:		this.view.getInt16(),
+			dy:		-this.view.getInt16(),
+			bb_r:	[-this.view.getInt16(),-this.view.getInt16(),
+						this.view.getInt16(),this.view.getInt16()],
+			bb_l:	[-this.view.getInt16(),-this.view.getInt16(),
+						this.view.getInt16(),this.view.getInt16()],
 			c_r:	this.view.getUint16(),
 			c_l:	this.view.getUint16()
 		});
@@ -280,7 +306,7 @@ wadLoader.getSegs=function(level,lump){
 		this.wad.levels[level].segs.push({
 			start:	this.view.getUint16(),
 			end:	this.view.getUint16(),
-			angle:	this.view.getInt16(),
+			angle:	this.view.getUint16(), //Uint not Int
 			linedef:this.view.getUint16(),
 			side:	this.view.getInt16(),
 			offset:	this.view.getInt16()
@@ -319,6 +345,253 @@ wadLoader.getSsectors=function(level,lump){
 	if(wadLoader.debug)
 		he3d.log("NOTICE",'['+level+'] SSECTORS',this.wad.levels[level].ssectors.length);
 };
+
+
+wadLoader.thing_to_thing_angle=function(x1, y1, x2, y2, direction){
+		var angle=0;
+		angle = Math.atan2(y2 - y1, x2 - x1);
+		if(angle<0)
+			angle+=2*Math.PI;
+		angle *= (180/Math.PI);
+		
+		if(angle<0)
+			angle+=360;
+			
+		if(angle>=180&&direction){
+			angle -=180;
+		} else if(direction) {
+			angle +=180;
+		}
+		return Math.round(angle);
+};
+
+wadLoader.buildSubsectors=function(level){
+	this.wad.levels[level].test=[];
+	this.wad.levels[level].test.segs=[];
+	this.wad.levels[level].test.sectors=[];
+	this.wad.levels[level].test.subsectors=[];
+	this.wad.levels[level].test.linedefs=[];
+	this.wad.levels[level].test.nodes=[];
+	this.wad.levels[level].test.spritecache=[];
+
+	var ldef, side, sector = [];
+	var level = this.wad.levels[level];
+	var ss=0, total=0;
+
+	for(ss=0;ss<level.sectors.length;ss++){
+			
+		sector = level.sectors[ss];
+		
+		sect={
+			ceiling:	sector.ceiling,
+			floor:		sector.floor,
+			lightlevel:	sector.lightlevel,
+			tag:		sector.tag,
+			tex_c:		sector.tex_c,
+			tex_f:		sector.tex_f,
+			type:		sector.type,
+			linecount:	0,
+			lines:		[],
+			segs:		[],
+			nodes: 		[]
+		}
+		
+		level.test.sectors.push(sect);
+	}
+	
+	for(ss=0;ss<level.linedefs.length;ss++){
+		
+		linesdf = level.linedefs[ss];
+
+		line={
+			start:			linesdf.start,
+			end:			linesdf.end,
+			flags:			linesdf.flags,
+			type:			linesdf.type,
+			tag:			linesdf.sector,
+			right:			linesdf.right,
+			left:			linesdf.left,
+			fs:				null,
+			bs:				null,
+			frontsector:	null,
+			backsector:		null
+		};
+		
+		total++;
+		if((line.right!=0xFFFF)){
+			line.frontsector=level.test.sectors[level.sidedefs[line.right].sector];
+			line.fs=level.sidedefs[line.right].sector;
+			if(!line.frontsector)
+				level.test.push(line.right);
+			line.frontsector.linecount++;
+		}
+		
+		if((line.right==0xFFFF)&&(line.left!=0xFFFF)){
+			line.frontsector=level.test.sectors[level.sidedefs[line.left].sector];	
+			line.fs=level.sidedefs[line.left].sector;
+			if(!line.frontsector)
+				level.test.push(line.right);
+			line.frontsector.linecount++;
+		}
+		
+		if((line.right!=0xFFFF)&&(line.left!=0xFFFF)){
+			line.backsector=level.test.sectors[level.sidedefs[line.left].sector];	
+			line.bs=level.sidedefs[line.left].sector;
+			if(line.backsector&&line.backsector!=line.frontsector){
+				line.backsector.linecount++;
+				total++;
+			}
+		}
+		
+		if(line.bs){
+			line.maxlight=line.backsector.lightlevel>
+				line.frontsector.lightlevel?line.backsector.lightlevel:line.frontsector.lightlevel;
+			line.minlight=line.backsector.lightlevel>
+				line.frontsector.lightlevel?line.frontsector.lightlevel:line.backsector.lightlevel;
+		}else{
+			line.maxlight=line.frontsector.lightlevel;
+			line.minlight=line.frontsector.lightlevel;
+		}
+		
+		if(line.bs&&!line.backsector.maxlight)
+			line.backsector.maxlight=line.backsector.lightlevel;
+		if(line.fs&&!line.frontsector.maxlight)
+			line.frontsector.maxlight=line.frontsector.lightlevel;
+			
+		if(line.bs&&line.backsector.maxlight<line.maxlight)
+			line.backsector.maxlight=line.maxlight;
+		if(line.bs&&line.backsector.maxlight>line.minlight)
+			line.backsector.minlight=line.minlight;
+		if(line.fs&&line.frontsector.maxlight<line.maxlight)
+			line.frontsector.maxlight=line.maxlight;
+		if(line.fs&&line.frontsector.maxlight>line.minlight)
+			line.frontsector.minlight=line.minlight;
+
+		if(line.fs&&line.flags.block_all==1)
+			line.frontsector.lines.push(ss);
+			
+		level.test.linedefs.push(line);		
+	}
+
+
+	// recreate segs in test
+	for(ss=0;ss<level.glsegs.length;ss++){
+		
+		seg = level.glsegs[ss];
+
+		segs={
+			start:	seg.start,
+			end:	seg.end,
+			v1:		null,
+			v2:		null,
+			side: 	seg.side,
+			linedef:seg.linedef,
+			partner:seg.partner,
+			bbox:	[]
+		}
+
+		if(segs.linedef!=0xFFFF)
+			segs.line=level.test.linedefs[seg.linedef];
+		
+		if(segs.start&(1<<15))
+			segs.v1=level.glverts[segs.start&~(1<<15)];
+		else
+			segs.v1=level.vertexes[segs.start];
+			
+		if(segs.end&(1<<15))
+			segs.v2=level.glverts[segs.end&~(1<<15)];
+		else
+			segs.v2=level.vertexes[segs.end];
+
+		if(segs.v1&&segs.v2&&segs.linedef!=0xFFFF){
+			segs.x=segs.v1.x;
+			segs.y=segs.v1.y;			
+			segs.dx=segs.v2.x-segs.v1.x;
+			segs.dy=segs.v2.y-segs.v1.y;
+			// top, bottom, right, left
+			segs.bbox=[segs.v1.y>segs.v2.y?segs.v1.y:segs.v2.y
+						,segs.v1.y<segs.v2.y?segs.v1.y:segs.v2.y
+						,segs.v1.x>segs.v2.x?segs.v1.x:segs.v2.x
+						,segs.v1.x<segs.v2.x?segs.v1.x:segs.v2.x];
+		}
+
+		if(segs.linedef!=0xFFFF)
+			segs.line.frontsector.segs.push(ss);
+		if(segs.linedef!=0xFFFF&&segs.line.bs)
+			segs.line.backsector.segs.push(ss);
+		
+		level.test.segs.push(segs);			
+	};	
+	
+	for(ss=0;ss<level.glssect.length;ss++){
+		
+		sect = level.glssect[ss];
+		
+		sect={
+			start: 	sect.start,
+			count:	sect.count,
+			sector:	null
+		}
+		
+		if(level.test.segs[sect.start].line){
+			if(level.test.segs[sect.start].side&&level.test.segs[sect.start].line.left)
+				sect.sector = level.sidedefs[level.test.segs[sect.start].line.left].sector;
+			else
+				sect.sector = level.sidedefs[level.test.segs[sect.start].line.right].sector;
+		}
+		level.test.subsectors.push(sect);		
+	}
+
+	for(ss=0;ss<level.glnodes.length;ss++){
+
+		nodes = level.glnodes[ss];
+		
+		node={
+				x:		nodes.x,
+				y:		nodes.y,
+				dx:		nodes.dx,
+				dy:		nodes.dy,
+				bb_r:	[nodes.bb_r[0],nodes.bb_r[1],nodes.bb_r[2],nodes.bb_r[3]],
+				bb_l:	[nodes.bb_l[0],nodes.bb_l[1],nodes.bb_l[2],nodes.bb_l[3]],
+				c_r:	nodes.c_r,	
+				c_l:	nodes.c_l,	
+				sector:	nodes.sector
+			};
+		if(node.c_r&SUBSECTOR&&(Math.abs(nodes.dx)>0||Math.abs(nodes.dy)>0))
+			level.test.sectors[level.test.subsectors[node.c_r&~SUBSECTOR].sector].nodes.push(ss);
+		if(node.c_l&SUBSECTOR&&(Math.abs(nodes.dx)>0||Math.abs(nodes.dy)>0))
+			level.test.sectors[level.test.subsectors[node.c_l&~SUBSECTOR].sector].nodes.push(ss);
+		
+		level.test.nodes.push(node);	
+	}
+	
+	sprite_lookup=[];
+	for(ss=0;ss<spritenames.length;ss++){
+		node={
+				spritematch:	[],
+				spritename:	spritenames[ss]
+			};
+		level.test.spritecache.push(node);
+	}
+	
+	for(ss=0;ss<this.wad.sprites.length;ss++){
+		sprite = this.wad.sprites[ss];
+		sname = sprite.name.substring(0,4);
+		sstate = sprite.name.substr(4,2);
+		id = spritenames.indexOf(sname);
+		node={	
+				flip:	0,
+				snum:	ss
+		};
+		level.test.spritecache[id].spritematch[sstate]=node;
+		if(sprite.name.length==8){
+			node.flip=1;
+			sstate = sprite.name.substr(6,2);		
+			level.test.spritecache[id].spritematch[sstate]=node;
+		}
+	}
+};
+
 wadLoader.getSectors=function(level,lump){
 	this.wad.levels[level].sectors=[];
 	this.view.seek(this.wad.directory[lump].filepos);
@@ -391,7 +664,7 @@ wadLoader.getColorMaps=function(){
 	var tmp=new Array(16);
 	for(var a=0;a<16;a++)
 		tmp[a]=new Array(16);
-		
+
 	this.view.seek(wadLoader.getLumpOfs('COLORMAP'));
 	if(wadLoader.debug)
 		he3d.log("NOTICE","Found COLORMAP at:",this.view.tell());
@@ -433,7 +706,7 @@ wadLoader.getPatch=function(patch,poff){
 	patch.data=new Array(patch.width);
 	for(var row=0;row<patch.data.length;row++)
 		patch.data[row]=[];
-		
+
 	var offsets=new Array(patch.width);
 	for(var o=0;o<patch.width;o++)
 		offsets[o]=this.view.getUint32();
@@ -491,7 +764,7 @@ wadLoader.getPatches=function(){
 			//he3d.log("WARNING","Missing or invalid Patch:",this.wad.pnames[p]);
 			continue;
 		}
-		
+
 		this.view.seek(poff);
 		patch={
 			width:	this.view.getUint16(),
@@ -505,7 +778,7 @@ wadLoader.getPatches=function(){
 		for(var row=0;row<patch.data.length;row++){
 			patch.data[row]=new Array(patch.height);
 		}
-		
+
 		var offsets=new Array(patch.width);
 		for(var o=0;o<patch.width;o++){
 			offsets[o]=this.view.getUint32();
@@ -527,6 +800,7 @@ wadLoader.getPatches=function(){
 		this.wad.patches[this.wad.pnames[p]]=patch;
 	}
 };
+
 wadLoader.getFlatTextures=function(){
 	var l,b;
 	this.wad.flats=[];
@@ -542,7 +816,7 @@ wadLoader.getFlatTextures=function(){
 						flat.push(this.view.getUint8());
 					this.wad.flats[this.wad.directory[l].name]=flat;
 				}
-				break;			
+				break;
 		}
 	}
 };
@@ -578,7 +852,7 @@ wadLoader.getWallTextures=function(){
 							oy:			this.view.getInt16(),
 							patch:		this.wad.pnames[this.view.getInt16()],
 							stepdir:	this.view.getInt16(),
-							colormap:	this.view.getInt16()								
+							colormap:	this.view.getInt16()
 						});
 					}
 					this.wad.textures[tname]=texture;
@@ -607,7 +881,8 @@ wadLoader.getGLNodes=function(level,lump){
 				bb_l:	[-this.view.getInt16(),-this.view.getInt16(),
 							this.view.getInt16(),this.view.getInt16()],
 				c_r:	this.view.getUint32(),	// Version 5 32bit
-				c_l:	this.view.getUint32()	// Version 5 32bit
+				c_l:	this.view.getUint32(),	// Version 5 32bit
+				sector:	null
 			});
 		}else{
 			this.wad.levels[level].glnodes.push({
@@ -620,7 +895,8 @@ wadLoader.getGLNodes=function(level,lump){
 				bb_l:	[-this.view.getInt16(),-this.view.getInt16(),
 							this.view.getInt16(),this.view.getInt16()],
 				c_r:	this.view.getUint16(),
-				c_l:	this.view.getUint16()
+				c_l:	this.view.getUint16(),
+				sector:	null
 			});
 		}
 	}

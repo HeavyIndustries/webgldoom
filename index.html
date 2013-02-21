@@ -69,8 +69,30 @@
 					target="_blank">he3d</a> which we'll not go into, its not important to this
 					demo, it just hides a lot of the html5/webgl/javascript gumpf away.</p>
 
+				<h2 class="update" onclick="toggle(this,'130108')">- 21st Feb 2013 Update:</h2>
+				<div id="130221">
+					<p>Oops, been awhile since we've updated here.<br>
+						- Split game.js into seperate files, much more readable and managable now<br>
+						- Updated to latest features in HE3D engine<br>
+						- Added HUD/Statusbar stuff.<br>
+						- Moved the debug keys to z,x,c,v,etc. The number keys are for weapons*.<br>
+						- THINGS angle correctly... mostly<br>
+						- THINGS have gained some intelligence now, they'll turn and shoot at you
+							if you get close enough.<br>
+						- Fixed ALPHA on wall textures<br>
+						- Projectiles!<br>
+						- Heightmap is gone, using the BSP sector check now.<br>
+						- Fixed some missing sprites<br>
+						- Reworked lighting, now works on THINGS.<br>
+						- Added some parsing code for audio support, not ready for use yet<br>
+						- Added animated FLATS<br>
+						- Sprite name lookup is way faster now<br>
+						- Probably a lot more<br>
+						<i>* No you still can't fire the weapons yet =P</i></p>
+				</div>
+				
 				<h2 class="update" onclick="toggle(this,'130108')">- 8th Jan 2013 Update:</h2>
-				<div id="130108">
+				<div id="130108" style="display:none;">
 					<p>Heightmaps should transfer a bit better now as it doesn't try to upload
 						the map as a texture (this was crashing Chrome on E1M8).</p>
 					<p>Added some better collision detection against the heightmap, its still very
@@ -149,7 +171,7 @@
 				<p>There are a few other buttons you can fiddle with too, if your GPU is halfway
 					decent you can try maximising the viewport using ALT+RETURN, then if you are
 					feeling really fruity, hit F11 for full screen browser mode.</p>
-				<p>You can also toggle some of the rendering settings using 1,2,3,4,5.</p>
+				<p>You can also toggle some of the rendering settings using z,x,c,v,b,n,m.</p>
 
 				<h2>Disclaimer</h2>
 				<p>We can't be held responsible for the quality of the code in this demo, we wrote

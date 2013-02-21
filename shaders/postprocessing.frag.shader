@@ -1,9 +1,4 @@
-precision mediump float;
-
-#define FILTER_BRIGHTNESSANDCONTRAST false
-#define FILTER_SCANLINES false
-#define FILTER_VIGNETTE true
-#define FILTER_PIXELATE false
+precision highp float;
 
 #define FXAA_REDUCE_MIN   (1.0/128.0)
 #define FXAA_REDUCE_MUL   (1.0/8.0)
@@ -13,9 +8,6 @@ uniform sampler2D texture;
 uniform vec2 uSize;
 
 uniform float damage;
-uniform bool paused;
-uniform float vignette;
-
 uniform sampler2D blurTexture;
 
 uniform bool opt_fxaa;
@@ -72,17 +64,6 @@ void main (void) {
 
 	if(opt_blur)
 		color+=0.8*texture2D(blurTexture,vTextureCoord.st);
-
-	// Vignette
-	if(FILTER_VIGNETTE&&vignette>0.0){
-		float dist=distance(vTextureCoord,vec2(0.5,0.5));
-		float amount=max(0.5,vignette);
-		color.rgb*=smoothstep(0.8,0.5*0.799,dist*(amount+0.5));
-
-		// Bloody Screen! SO REAL!
-		if(damage>50.0)
-			color.r+=min(1.0,(damage/100.0)*dist);
-	}
 
 	gl_FragColor=color;
 }

@@ -7,34 +7,6 @@ wadLoader.wallLength=function(s,e){
 	return Math.sqrt(x*x+y*y);
 };
 
-wadLoader.getLightType=function(t){
-	switch(t){
-		// Random Blink
-		case 1:
-		case 17:
-			return 1.0;
-			break;
-		// Blink 0.5
-		case 2:
-		case 4:
-		case 12:
-			return 2.0;
-			break;
-		// Blink 1.0
-		case 3:
-		case 11:
-			return 3.0;
-			break;
-		// Oscillate
-		case 8:
-			return 4.0;
-			break;
-		// Full Light
-		default:
-			return 0.0;
-	}
-};
-
 //
 // Ideas-
 //	if the angle of the wall doesn't change and its the same texture,
@@ -49,7 +21,7 @@ wadLoader.buildFace=function(data,front,top,bottom,ceiling,floor,sv,ev,
 
 	if(bottom<floor)
 		bottom=floor;
-	
+
 	while(top>bottom){
 		if(bottom<floor)
 			bottom=floor;
@@ -71,13 +43,13 @@ wadLoader.buildFace=function(data,front,top,bottom,ceiling,floor,sv,ev,
 			twidth=wadLoader.wallLength(wstart,wend);
 			if(xoff+twidth>texwidth)
 				xoff=0;
-			
+
 			data.verts.push(
 				wstart.x,top,wstart.y,		// start top
 				wstart.x,bottom,wstart.y,	// start bottom
 				wend.x,top,wend.y,			// end top
 				wend.x,bottom,wend.y);		// end bottom
-	
+
 			data.indices.push(data.i++,data.i++,data.i++,data.i-1,data.i-2,data.i++);
 			if(flags.peg_upper)
 				peg='upper';
@@ -91,6 +63,7 @@ wadLoader.buildFace=function(data,front,top,bottom,ceiling,floor,sv,ev,
 				{t:t,w:twidth,h:height,x:xoff,y:yoff,peg:peg});
 			data.brightness.push(data.light,data.light,data.light,data.light);
 			data.type.push(data.stype,data.stype,data.stype,data.stype);
+			data.sector.push(front.sector,front.sector,front.sector,front.sector);
 
 			wstart.x=wend.x;
 			wstart.y=wend.y;
@@ -99,7 +72,7 @@ wadLoader.buildFace=function(data,front,top,bottom,ceiling,floor,sv,ev,
 		if(bottom==floor)
 			break;
 
-		top-=(this.wad.textures[t].height-yoff)*MAP_SCALE;	
+		top-=(this.wad.textures[t].height-yoff)*MAP_SCALE;
 		bottom-=(this.wad.textures[t].height+yoff)*MAP_SCALE;
 		if(yoff>0)
 			yoff=0;
@@ -109,12 +82,13 @@ wadLoader.addWall=function(data,map,front,back,start,end,flags){
 	var tc=0;
 	var frontsec=map.sectors[front.sector];
 	var skybox=false;
+	data.fsector=front.sector;
 	data.floor=frontsec.floor*MAP_SCALE;
 	data.tex_f=frontsec.tex_f;
 	data.ceiling=frontsec.ceiling*MAP_SCALE;
 	data.tex_c=frontsec.tex_c;
 	data.light=frontsec.lightlevel/255;
-	data.stype=wadLoader.getLightType(frontsec.type);
+	data.stype=getLightType(frontsec.type);
 
 	if(back){
 		var backsec=map.sectors[back.sector];
@@ -193,7 +167,7 @@ wadLoader.addWall=function(data,map,front,back,start,end,flags){
 
 	// Multi Textured Wall -----
 	} else {
-		var ceiling, floor;
+		var ceiling,floor;
 
 		var dir=(Math.sqrt(sv.x*sv.x+sv.y*sv.y)<Math.sqrt(ev.x*ev.x+ev.y*ev.y));
 		var uvec=[(ev.x-sv.x)/width,(ev.y-sv.y)/width];
@@ -298,7 +272,7 @@ wadLoader.addWall=function(data,map,front,back,start,end,flags){
 				// Typically 'upper' door faces will be lower pegged
 				if(!flags.peg_upper)
 					flags.peg_lower='lower';
-			
+
 				wadLoader.buildFace(data,front,
 					ceiling,floor,ceiling,floor,sv,ev,
 					front.tex_u,front.y,flags,texwidth,
@@ -320,25 +294,32 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 		if(!line)
 			continue;
 
+//		if(line.type==1){
+//			he3d.log("DEBUG","Part of a door at segno:",off+segno);
+//			continue;
+//		}
+
 		if(map.glsegs[off+segno].side==0){
 			if(line.left){
 				wadLoader.addWall(data,map,map.sidedefs[line.right],
 					map.sidedefs[line.left],start,end,line.flags);
 			}else{
-				wadLoader.addWall(data,map,map.sidedefs[line.right],null,
-					start,end,line.flags);
+				wadLoader.addWall(data,map,map.sidedefs[line.right],
+					null,start,end,line.flags);
 			}
 		} else {
 			if(line.right){
 				wadLoader.addWall(data,map,map.sidedefs[line.left],
 					map.sidedefs[line.right],start,end,line.flags);
 			}else{
-				wadLoader.addWall(data,map,map.sidedefs[line.left],null,
-					start,end,line.flags);
+				wadLoader.addWall(data,map,map.sidedefs[line.left],
+					null,start,end,line.flags);
 			}
 		}
 	}
-
+	if(!node.sector)
+		node.sector=data.fsector;
+		
 	// Get Thing Heights
 	wadLoader.findThingInSSector(map,(!side)?node.bb_r:node.bb_l,data.floor);
 
@@ -375,7 +356,7 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 	var tris=lines.length-2;
 	if(tris<1)
 		return;
-		
+
 	var first=true;
 	while(tris--){
 		if(first){
@@ -385,21 +366,21 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 			else
 				data.flats.verts.push(map.vertexes[lines[sv]].x*MAP_SCALE,
 					data.floor,map.vertexes[lines[sv]].y*MAP_SCALE);
-				
+
 			if(lines[ev]&VERT_IS_GL)
 				data.flats.verts.push(map.glverts[lines[ev]&~VERT_IS_GL].x*MAP_SCALE,
 					data.floor,map.glverts[lines[ev]&~VERT_IS_GL].y*MAP_SCALE);
 			else
 				data.flats.verts.push(map.vertexes[lines[ev]].x*MAP_SCALE,
 					data.floor,map.vertexes[lines[ev]].y*MAP_SCALE);
-	
+
 			if(lines[nv]&VERT_IS_GL)
 				data.flats.verts.push(map.glverts[lines[nv]&~VERT_IS_GL].x*MAP_SCALE,
 					data.floor,map.glverts[lines[nv]&~VERT_IS_GL].y*MAP_SCALE);
 			else
 				data.flats.verts.push(map.vertexes[lines[nv]].x*MAP_SCALE,
 					data.floor,map.vertexes[lines[nv]].y*MAP_SCALE);
-	
+
 			data.flats.indices.push(data.flats.i++,data.flats.i++,data.flats.i++);
 			data.flats.uv.push(
 				{t:data.tex_f,v:0,u:1},
@@ -409,11 +390,12 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 			data.flats.brightness.push(data.light,data.light,data.light);
 			data.flats.type.push(data.stype,data.stype,data.stype);
 			data.flats.cf.push('f','f','f','f','f','f','f','f','f');
+			data.flats.sector.push(data.fsector,data.fsector,data.fsector);
 			first=false;
 			continue;
-			
+
 		} else {
-			
+
 			if(itr){
 				sv=nv;
 				nv++;
@@ -423,21 +405,21 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 				else
 					data.flats.verts.push(map.vertexes[lines[sv]].x*MAP_SCALE,
 						data.floor,map.vertexes[lines[sv]].y*MAP_SCALE);
-					
+
 				if(lines[ev]&VERT_IS_GL)
 					data.flats.verts.push(map.glverts[lines[ev]&~VERT_IS_GL].x*MAP_SCALE,
 						data.floor,map.glverts[lines[ev]&~VERT_IS_GL].y*MAP_SCALE);
 				else
 					data.flats.verts.push(map.vertexes[lines[ev]].x*MAP_SCALE,
 						data.floor,map.vertexes[lines[ev]].y*MAP_SCALE);
-	
+
 				if(lines[nv]&VERT_IS_GL)
 					data.flats.verts.push(map.glverts[lines[nv]&~VERT_IS_GL].x*MAP_SCALE,
 						data.floor,map.glverts[lines[nv]&~VERT_IS_GL].y*MAP_SCALE);
 				else
 					data.flats.verts.push(map.vertexes[lines[nv]].x*MAP_SCALE,
 						data.floor,map.vertexes[lines[nv]].y*MAP_SCALE);
-						
+
 				data.flats.indices.push(data.flats.i++,data.flats.i++,data.flats.i++);
 				data.flats.uv.push(
 					{t:data.tex_f,v:0,u:1},
@@ -447,6 +429,7 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 				data.flats.brightness.push(data.light,data.light,data.light);
 				data.flats.type.push(data.stype,data.stype,data.stype);
 				data.flats.cf.push('f','f','f','f','f','f','f','f','f');
+				data.flats.sector.push(data.fsector,data.fsector,data.fsector);
 			} else {
 				sv=ev;
 				ev--;
@@ -457,21 +440,21 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 				else
 					data.flats.verts.push(map.vertexes[lines[sv]].x*MAP_SCALE,
 						data.floor,map.vertexes[lines[sv]].y*MAP_SCALE);
-					
+
 				if(lines[ev]&VERT_IS_GL)
 					data.flats.verts.push(map.glverts[lines[ev]&~VERT_IS_GL].x*MAP_SCALE,
 						data.floor,map.glverts[lines[ev]&~VERT_IS_GL].y*MAP_SCALE);
 				else
 					data.flats.verts.push(map.vertexes[lines[ev]].x*MAP_SCALE,
 						data.floor,map.vertexes[lines[ev]].y*MAP_SCALE);
-	
+
 				if(lines[nv]&VERT_IS_GL)
 					data.flats.verts.push(map.glverts[lines[nv]&~VERT_IS_GL].x*MAP_SCALE,
 						data.floor,map.glverts[lines[nv]&~VERT_IS_GL].y*MAP_SCALE);
 				else
 					data.flats.verts.push(map.vertexes[lines[nv]].x*MAP_SCALE,
 						data.floor,map.vertexes[lines[nv]].y*MAP_SCALE);
-					
+
 				data.flats.indices.push(data.flats.i++,data.flats.i++,data.flats.i++);
 				data.flats.uv.push(
 					{t:data.tex_f,v:0,u:3},
@@ -481,6 +464,7 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 				data.flats.brightness.push(data.light,data.light,data.light);
 				data.flats.type.push(data.stype,data.stype,data.stype);
 				data.flats.cf.push('f','f','f','f','f','f','f','f','f');
+				data.flats.sector.push(data.fsector,data.fsector,data.fsector);
 			}
 
 		}
@@ -511,7 +495,7 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 			else
 				data.flats.verts.push(map.vertexes[lines[nv]].x*MAP_SCALE,
 					data.ceiling,map.vertexes[lines[nv]].y*MAP_SCALE);
-				
+
 			if(lines[ev]&VERT_IS_GL)
 				data.flats.verts.push(map.glverts[lines[ev]&~VERT_IS_GL].x*MAP_SCALE,
 					data.ceiling,map.glverts[lines[ev]&~VERT_IS_GL].y*MAP_SCALE);
@@ -528,9 +512,10 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 			data.flats.brightness.push(data.light,data.light,data.light);
 			data.flats.type.push(data.stype,data.stype,data.stype);
 			data.flats.cf.push('c','c','c','c','c','c','c','c','c');
+			data.flats.sector.push(data.fsector,data.fsector,data.fsector);
 			first=false;
 			continue;
-			
+
 		} else {
 
 			if(itr){
@@ -542,14 +527,14 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 				else
 					data.flats.verts.push(map.vertexes[lines[sv]].x*MAP_SCALE,
 						data.ceiling,map.vertexes[lines[sv]].y*MAP_SCALE);
-	
+
 				if(lines[nv]&VERT_IS_GL)
 					data.flats.verts.push(map.glverts[lines[nv]&~VERT_IS_GL].x*MAP_SCALE,
 						data.ceiling,map.glverts[lines[nv]&~VERT_IS_GL].y*MAP_SCALE);
 				else
 					data.flats.verts.push(map.vertexes[lines[nv]].x*MAP_SCALE,
 						data.ceiling,map.vertexes[lines[nv]].y*MAP_SCALE);
-					
+
 				if(lines[ev]&VERT_IS_GL)
 					data.flats.verts.push(map.glverts[lines[ev]&~VERT_IS_GL].x*MAP_SCALE,
 						data.ceiling,map.glverts[lines[ev]&~VERT_IS_GL].y*MAP_SCALE);
@@ -566,6 +551,7 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 				data.flats.brightness.push(data.light,data.light,data.light);
 				data.flats.type.push(data.stype,data.stype,data.stype);
 				data.flats.cf.push('c','c','c','c','c','c','c','c','c');
+				data.flats.sector.push(data.fsector,data.fsector,data.fsector);
 
 			} else {
 				sv=ev;
@@ -576,14 +562,14 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 				else
 					data.flats.verts.push(map.vertexes[lines[sv]].x*MAP_SCALE,
 						data.ceiling,map.vertexes[lines[sv]].y*MAP_SCALE);
-	
+
 				if(lines[nv]&VERT_IS_GL)
 					data.flats.verts.push(map.glverts[lines[nv]&~VERT_IS_GL].x*MAP_SCALE,
 						data.ceiling,map.glverts[lines[nv]&~VERT_IS_GL].y*MAP_SCALE);
 				else
 					data.flats.verts.push(map.vertexes[lines[nv]].x*MAP_SCALE,
 						data.ceiling,map.vertexes[lines[nv]].y*MAP_SCALE);
-					
+
 				if(lines[ev]&VERT_IS_GL)
 					data.flats.verts.push(map.glverts[lines[ev]&~VERT_IS_GL].x*MAP_SCALE,
 						data.ceiling,map.glverts[lines[ev]&~VERT_IS_GL].y*MAP_SCALE);
@@ -600,6 +586,7 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 				data.flats.brightness.push(data.light,data.light,data.light);
 				data.flats.type.push(data.stype,data.stype,data.stype);
 				data.flats.cf.push('c','c','c','c','c','c','c','c','c');
+				data.flats.sector.push(data.fsector,data.fsector,data.fsector);
 			}
 		}
 
@@ -609,165 +596,10 @@ wadLoader.buildSSector=function(data,map,node,side,ss){
 	if(!data.flattextures[data.tex_f])
 		data.flattextures[data.tex_f]={count:0};
 	data.flattextures[data.tex_f].count++;
-	
+
 	if(!data.flattextures[data.tex_c])
 		data.flattextures[data.tex_c]={count:0};
 	data.flattextures[data.tex_c].count++;
-};
-
-//
-// Height map generation ---------------------------------------------------------------------------
-//
-wadLoader.heightmapDrawSpan=function(s,e,y,height){
-	var xdiff=e-s;
-	if(xdiff==0)
-		return;
-
-	var f=0;
-	var fstep=1/xdiff;
-
-	// Set some pixels!
-	for(var x=s;x<e;x++){
-		this.wad.heightmap.data[x][y]=height;
-		f+=fstep;// interpolation, probably not needed unless doom has ramps =P
-		//	though more seriously, could ramp to the next height,
-		//	then if the difference is HUGE its probably a wall =o
-	}
-};
-wadLoader.heightmapDrawEdgeSpan=function(edge1,edge2,height){
-	var e1ydiff=edge1[3]-edge1[1];
-	if(e1ydiff==0)
-		return;
-	var e2ydiff=edge2[3]-edge2[1];
-	if(e2ydiff==0)
-		return;
-
-	var e1xdiff=edge1[2]-edge1[0];
-	var e2xdiff=edge2[2]-edge2[0];
-
-	// Calculate interpolation factors
-	var factor1=(edge2[1]-edge1[1])/e1ydiff;
-	var factorStep1=1/e1ydiff;
-	var factor2=0;
-	var factorStep2=1/e2ydiff;
-
-	// Loop through the lines between the edges and draw spans
-	var start,end;
-	for(var y=edge2[1];y<edge2[3];y++){
-		// Create span
-		start=edge1[0]+parseInt(e1xdiff*factor1);
-		end=edge2[0]+parseInt(e2xdiff*factor2);
-
-		if(start<end)
-			wadLoader.heightmapDrawSpan(start,end,y,height);
-		else
-			wadLoader.heightmapDrawSpan(end,start,y,height);
-
-		factor1+=factorStep1;
-		factor2+=factorStep2;
-	}
-};
-
-wadLoader.buildHeightmap=function(data){
-	he3d.log("DEBUG","World Bounding Box",this.wad.worldbb);
-
-	// Dimensions
-	this.wad.heightmap={
-		height:	Math.abs(this.wad.worldbb[0]-this.wad.worldbb[1]),
-		offx:	-this.wad.worldbb[2],
-		offy:	-this.wad.worldbb[0],
-		min:	0,
-		max:	0,
-		width:	Math.abs(this.wad.worldbb[2]-this.wad.worldbb[3])
-	};
-	
-	he3d.log("DEBUG","Heightmap Size",this.wad.heightmap.width+"x"+this.wad.heightmap.height+
-		" offsets["+this.wad.heightmap.offx+"x"+this.wad.heightmap.offy+"]");
-
-	// Build bitmap
-	this.wad.heightmap.data=new Array(this.wad.heightmap.width);
-	for(var w=0;w<this.wad.heightmap.width;w++){
-		this.wad.heightmap.data[w]=new Array(this.wad.heightmap.height);
-		for(var h=0;h<this.wad.heightmap.height;h++)
-			this.wad.heightmap.data[w][h]=NOGROUND;
-	}
-
-	// Rasterise the flats into bitmap!
-	// http://joshbeam.com/articles/triangle_rasterization/
-	var edge=new Array(3);
-	var len=0,maxlen=0,height,minh=0,maxh=0;
-	var ledge=0,sedge1=0,sedge2=0;
-	for(var v=0;v<data.flats.verts.length;v+=9){
-		// Only read floors
-		if(data.flats.cf[v]=='c')
-			continue;
-
-		height=data.flats.verts[v+1];
-
-		if(height>maxh)maxh=height;
-		if(height<minh)minh=height;
-		
-		edge[0]=[
-			data.flats.verts[v]+this.wad.heightmap.offx,
-			data.flats.verts[v+2]+this.wad.heightmap.offy,
-			data.flats.verts[v+3]+this.wad.heightmap.offx,
-			data.flats.verts[v+5]+this.wad.heightmap.offy];
-		if(edge[0][1]>edge[0][3])
-			edge[0]=[
-				data.flats.verts[v+3]+this.wad.heightmap.offx,
-				data.flats.verts[v+5]+this.wad.heightmap.offy,
-				data.flats.verts[v]+this.wad.heightmap.offx,
-				data.flats.verts[v+2]+this.wad.heightmap.offy];
-				
-		edge[1]=[
-			data.flats.verts[v+3]+this.wad.heightmap.offx,
-			data.flats.verts[v+5]+this.wad.heightmap.offy,
-			data.flats.verts[v+6]+this.wad.heightmap.offx,
-			data.flats.verts[v+8]+this.wad.heightmap.offy];
-		if(edge[1][1]>edge[1][3])
-			edge[1]=[
-				data.flats.verts[v+6]+this.wad.heightmap.offx,
-				data.flats.verts[v+8]+this.wad.heightmap.offy,
-				data.flats.verts[v+3]+this.wad.heightmap.offx,
-				data.flats.verts[v+5]+this.wad.heightmap.offy];
-	
-		edge[2]=[
-			data.flats.verts[v+6]+this.wad.heightmap.offx,
-			data.flats.verts[v+8]+this.wad.heightmap.offy,
-			data.flats.verts[v]+this.wad.heightmap.offx,
-			data.flats.verts[v+2]+this.wad.heightmap.offy];
-		if(edge[2][1]>edge[2][3])
-			edge[2]=[
-				data.flats.verts[v]+this.wad.heightmap.offx,
-				data.flats.verts[v+2]+this.wad.heightmap.offy,
-				data.flats.verts[v+6]+this.wad.heightmap.offx,
-				data.flats.verts[v+8]+this.wad.heightmap.offy];
-
-		// Find longest edge
-		maxlen=0;
-		for(var e=0;e<3;e++){
-			len=Math.abs(edge[e][3]-edge[e][1]);
-			if(len>maxlen){
-				maxlen=len;
-				ledge=e;
-			}
-        }
-		sedge1=(ledge+1)%3;
-        sedge2=(ledge+2)%3;
-
-        wadLoader.heightmapDrawEdgeSpan(edge[ledge],edge[sedge1],height);
-        wadLoader.heightmapDrawEdgeSpan(edge[ledge],edge[sedge2],height);
-	}
-	this.wad.heightmap.min=minh;
-	this.wad.heightmap.max=maxh;
-
-	// Flatten array
-	var data=new Int16Array(this.wad.heightmap.width*this.wad.heightmap.height);
-	var ai=0;
-	for(var h=0;h<this.wad.heightmap.height;h++)
-		for(var w=0;w<this.wad.heightmap.width;w++)
-			data[ai++]=this.wad.heightmap.data[w][h];
-	this.wad.heightmap.data=data;
 };
 
 wadLoader.buildLevel=function(level){
@@ -788,6 +620,7 @@ wadLoader.buildLevel=function(level){
 			uv:[],
 			brightness:[],
 			type:[],
+			sector:[],
 			indices:[],
 			cf:[],
 			i:0
@@ -795,19 +628,30 @@ wadLoader.buildLevel=function(level){
 		flattextures:[],
 		uv:[],
 		type:[],
+		sector:[],
 		brightness:[],
 		i:0
 	};
 
 	he3d.log("DEBUG","Building Nodes","Total: "+map.glnodes.length);
-	var node;
+	var node,bsplines=[],bspidx=[],bspi=0;
 	for(var n=0;n<map.glnodes.length;n++){
 		node=map.glnodes[n];
 		if(node.c_r&SUBSECTOR)
 			wadLoader.buildSSector(data,map,node,0,node.c_r&~SUBSECTOR);
 		if(node.c_l&SUBSECTOR)
 			wadLoader.buildSSector(data,map,node,1,node.c_l&~SUBSECTOR);
+
+		bsplines.push(
+			node.x,this.wad.worldbb[5],node.y,2.1,
+			node.x+node.dx,this.wad.worldbb[5],node.y+node.dy,2.1
+		);
+		bspidx.push(bspi++,bspi++);
+		
 	}
+
+	this.wad.nodes=map.glnodes;
+	this.wad.sectors=map.sectors;
 
 	this.wad.spawnPos=[0,0,0];
 	this.wad.spawnDir=0;
@@ -818,27 +662,31 @@ wadLoader.buildLevel=function(level){
 				((map.things[t].y*MAP_SCALE)+PLAYER_HEIGHT),
 				-map.things[t].z*MAP_SCALE
 			];
-			this.wad.spawnDir=map.things[t].angle-90;
+			this.wad.spawnDir=Math.round((map.things[t].angle/360)*8)||8;
 			if(this.wad.spawnDir<0)this.wad.spawnDir+=360;
 			he3d.log("NOTICE","Found Spawn Point:",this.wad.spawnPos[0]+"x"+this.wad.spawnPos[2]);
 		}
 	}
 
 	// Build Heightmap
-	wadLoader.buildHeightmap(data);
+	//wadLoader.buildHeightmap(data);
 
 	he3d.log("DEBUG","Building Textures"," ");
 	wadLoader.buildWallTextures(data);
 	wadLoader.buildFlatTextures(data);
 	wadLoader.buildSkyTextures(data);
 
+	this.wad.bsplinesdata=new Float32Array(bsplines);
+	this.wad.bsplinesindices=new Float32Array(bspidx);
+
 	he3d.log("DEBUG","Total Wall Triangles",data.verts.length/3);
-	this.wad.mapdata=he3d.tools.interleaveFloat32Arrays([3,2,1,1],
-		[data.verts,data.uv,data.brightness,data.type]);
+	this.wad.mapdata=he3d.tools.interleaveFloat32Arrays([3,2,1,1,1],
+		[data.verts,data.uv,data.brightness,data.type,data.sector]);
 	this.wad.indices=data.indices;
-	
+
 	he3d.log("DEBUG","Total Flats Triangles",data.flats.verts.length/3);
-	this.wad.flatdata=he3d.tools.interleaveFloat32Arrays([3,2,1,1],
-		[data.flats.verts,data.flats.uv,data.flats.brightness,data.flats.type]);
+	this.wad.flatdata=he3d.tools.interleaveFloat32Arrays([3,2,1,1,1,1],
+		[data.flats.verts,data.flats.uv,data.flats.frames,
+		data.flats.brightness,data.flats.type,data.flats.sector]);
 	this.wad.flatindices=data.flats.indices;
 };
