@@ -1,8 +1,8 @@
 //
 // Shared functions between loader and game
 //
-function getLightType(t){
-	switch(t){
+function getLightType(t) {
+	switch (t) {
 		// Random Blink
 		case 1:
 		case 17:

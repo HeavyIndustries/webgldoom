@@ -1,5 +1,7 @@
 precision highp float;
 
+#define MAX_LIGHTS 32
+
 uniform sampler2D texture;
 uniform sampler2D texture_ssao;
 
@@ -8,7 +10,15 @@ uniform vec2 ssao_size;
 uniform int lines;
 uniform int hlSector;
 
+struct light_t {
+    vec3 color;
+    vec3 position;
+    float size;
+};
+uniform light_t uLight[MAX_LIGHTS];
+
 varying vec3 vPos;
+varying vec3 vNormal;
 varying vec2 vTexId;
 varying float vFrame;
 varying float vLight;
@@ -65,6 +75,19 @@ void main (void){
 
 	if (hlSector > -1 && float(hlSector) == floor(vSector))
 		color.rgb += vec3(0.8, 0.8, 0.0);
+
+	// Dynamic Lighting
+	for (int l = 0; l < MAX_LIGHTS; l++) {
+		if (uLight[l].size < 0.0)
+			continue;
+		vec3  lDir 		= uLight[l].position - vPos.xyz;
+		float lDist 	= length(lDir);
+		lDir 			= normalize(lDir);
+		float lWeight 	= max(dot(vNormal.xyz, lDir), 0.0);
+		float lAttn 	= uLight[l].size / (0.55 + (0.22 * lDist) + (0.20 * lDist * lDist));
+
+		color.rgb += lAttn * (lWeight * uLight[l].color * color.rgb);
+	}
 
 	if (ssao == 1)
 		color.rgb *= texture2D(texture_ssao, gl_FragCoord.xy / ssao_size).rgb;

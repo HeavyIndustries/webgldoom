@@ -7,7 +7,6 @@ precision highp float;
 uniform sampler2D texture;
 uniform vec2 uSize;
 
-uniform float damage;
 uniform sampler2D blurTexture;
 
 uniform bool opt_fxaa;

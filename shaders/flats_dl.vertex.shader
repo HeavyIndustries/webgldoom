@@ -1,4 +1,5 @@
 attribute vec3 aPosition;
+attribute vec3 aNormal;
 attribute vec2 aTexId;
 attribute float aFrames;
 attribute float aLight;
@@ -10,6 +11,7 @@ uniform mat4 uPMatrix;
 uniform float lighttimers[5];
 uniform float aniFrame[2];
 
+varying vec3 vNormal;
 varying vec3 vPos;
 varying vec2 vTexId;
 varying float vLight;
@@ -26,8 +28,9 @@ void main(void){
 	else if (floor(aFrames) == 4.0)
 		vFrame = aniFrame[1] + 0.1;
 		
-	vTexId 		= aTexId;
 	vLight		= aLight * lighttimers[int(aType)];
+	vNormal		= aNormal;
 	vPos		= aPosition;
+	vTexId 		= aTexId;
 	gl_Position	= uPMatrix * uMVMatrix * vec4(aPosition, 1.0);
 }

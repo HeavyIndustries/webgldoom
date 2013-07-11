@@ -14,7 +14,7 @@ wadLoader.wallLength=function(s,e){
 //
 wadLoader.buildFace=function(data,front,top,bottom,ceiling,floor,sv,ev,
 	t,yoff,flags,texwidth,dir,uvec,width,wchunks){
-	var height,wstart,wend,ww,peg='';
+	var height,normal,wstart,wend,ww,peg='';
 	var xoff=front.x;
 	if(xoff>texwidth)
 		xoff-=texwidth;
@@ -49,6 +49,19 @@ wadLoader.buildFace=function(data,front,top,bottom,ceiling,floor,sv,ev,
 				wstart.x,bottom,wstart.y,	// start bottom
 				wend.x,top,wend.y,			// end top
 				wend.x,bottom,wend.y);		// end bottom
+
+			normal = he3d.tools.createNormalsFromVerts([
+				wstart.x,top,wstart.y,
+				wstart.x,bottom,wstart.y,
+				wend.x,top,wend.y
+			]);
+
+			// Each wall always faces the same direction
+			data.normals.push(
+				normal[0], normal[1], normal[2],
+				normal[0], normal[1], normal[2], 
+				normal[0], normal[1], normal[2],
+				normal[0], normal[1], normal[2]); 
 
 			data.indices.push(data.i++,data.i++,data.i++,data.i-1,data.i-2,data.i++);
 			if(flags.peg_upper)
@@ -611,6 +624,7 @@ wadLoader.buildLevel=function(level){
 
 	var data={
 		verts:[],
+		normals:[],
 		indices:[],
 		colours:[],
 		textures:[],
@@ -680,13 +694,16 @@ wadLoader.buildLevel=function(level){
 	this.wad.bsplinesindices=new Float32Array(bspidx);
 
 	he3d.log("DEBUG","Total Wall Triangles",data.verts.length/3);
-	this.wad.mapdata=he3d.tools.interleaveFloat32Arrays([3,2,1,1,1],
-		[data.verts,data.uv,data.brightness,data.type,data.sector]);
+	this.wad.mapdata=he3d.tools.interleaveFloat32Arrays([3,3,2,1,1,1],
+		[data.verts,data.normals,data.uv,data.brightness,data.type,data.sector]);
 	this.wad.indices=data.indices;
 
+	he3d.log("DEBUG", "Building Flat Normals");
+	var flatnormals = he3d.tools.createNormalsFromVerts(data.flats.verts);
+
 	he3d.log("DEBUG","Total Flats Triangles",data.flats.verts.length/3);
-	this.wad.flatdata=he3d.tools.interleaveFloat32Arrays([3,2,1,1,1,1],
-		[data.flats.verts,data.flats.uv,data.flats.frames,
+	this.wad.flatdata=he3d.tools.interleaveFloat32Arrays([3,3,2,1,1,1,1],
+		[data.flats.verts,flatnormals,data.flats.uv,data.flats.frames,
 		data.flats.brightness,data.flats.type,data.flats.sector]);
 	this.wad.flatindices=data.flats.indices;
 };

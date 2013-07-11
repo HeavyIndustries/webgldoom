@@ -69,8 +69,40 @@
 					target="_blank">he3d</a> which we'll not go into, its not important to this
 					demo, it just hides a lot of the html5/webgl/javascript gumpf away.</p>
 
-				<h2 class="update" onclick="toggle(this,'130108')">- 21st Feb 2013 Update:</h2>
-				<div id="130221">
+				<h2 class="update" onclick="toggle(this,'130711')">- 11th July 2013 Update:</h2>
+				<div id="130711">
+					<p>"Suppose we should really push the latest stuff to github" Edition (TM)<br>
+						The biggest change here is the addition of the 'world buffer', an offscreen
+						render target that all the walls, flats, things and such are rendered into.
+						This has some benfits such as pre-z calculation so we don't waste too much
+						time doing work fancy pixels that you'll never see.</p>
+					<p>Supposedly should give a nice performance boost in theory but that doesn't
+						seem to be the case, infact on Firefox at least it seems to have slowed it
+						down even more. So while we are killing performance how about we go all the
+						way and really butcher the framerate? Dynamic Lights and Screen Space
+						Ambient Occlusion (SSAO)!</p>
+					<p>The Dynamic Lights are for missle projectiles only so far, but there is no
+						reason why we couldn't detect certain THINGS that could emit light, like the
+						slime barrels and the little light stalks that litter the levels. Currently
+						the Dynamic Lights are hardlimited to 32.</p>
+					<p>SSAO is a subtle but awesome effect, you can toggle it using the . key,
+						keep an eye on the edges and corners of the walls and floors. Yeah, told
+						you it was subtle but now you've seen it, quite effective isn't it ;) Just
+						ignore the huge hit to your FPS =P</p>
+
+					<p>Other bits<br>
+						- Fixed(ish) projectiles getting stuck in the air.<br>
+						- THINGS update stack now more efficient.<br>
+						- THINGS now use a cylindrical billboarding style.<br>
+						- Probably some other fixes.
+					</p>
+					<p>It looks like a lot more was done as the diff is HUGE, this is pretty much
+						just because I decided to get a bit stricter on the code style and virtually
+						every line has been changed as a result =P</p>
+				</div>
+
+				<h2 class="update" onclick="toggle(this,'130221')">- 21st Feb 2013 Update:</h2>
+				<div id="130221" style="display:none;">
 					<p>Oops, been awhile since we've updated here.<br>
 						- Split game.js into seperate files, much more readable and managable now<br>
 						- Updated to latest features in HE3D engine<br>

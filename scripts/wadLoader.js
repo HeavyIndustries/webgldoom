@@ -4,6 +4,7 @@
 wadLoader={};
 
 importScripts('../../he3d/scripts/he3d_tools.js');
+importScripts('../../he3d/scripts/he3d_math.js');
 importScripts('../../he3d/scripts/lib/jdataview.js');
 
 importScripts('defines.js');
